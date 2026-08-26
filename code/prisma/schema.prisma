@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TaskPriority{
+  LOW 
+  MEDIUM 
+  HIGH
+} 
+enum GroupRole{ 
+  OWNER  
+  MEMBER 
+} 
+model User { 
+  id  String @id @default(cuid()) 
+  name String? 
+  email String 
+  passwordHash String? 
+  createdAt DateTime @default(now()) 
+  tasks Task[] 
+  studySessions StudySession[]
+  resources Resource[] 
+  memberships GroupMember[]
+} 
+
+model Task { 
+  id String @id @default(cuid()) 
+  title String 
+  description String? 
+  dueDate DateTime? 
+  priority TaskPriority @default(MEDIUM) 
+  completed Boolean @default(false) 
+  completedAt DateTime? 
+  createdAt DateTime @default(now()) 
+  updatedAt DateTime @updatedAt 
+  userId String 
+  user User @relation(fields : [userId] , references : [id] , onDelete :Cascade) 
+  @@index([userId , completed , dueDate]) 
+}
+
+model StudySession{
+  id String @id @default(cuid()) 
+  durationMin Int 
+  startedAt DateTime 
+  completedAt DateTime?
+  userId String 
+  user User @relation(fields :[userId] , references : [id], onDelete : Cascade) 
+} 
+
+model Resource{
+  id String @id @default(cuid()) 
+  name String 
+  storageKey String @unique 
+  mimeType String 
+  sizeBytes Int 
+  createdAt DateTime @default(now()) 
+  userId String 
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StudyGroup{
+  id String @id @default(cuid()) 
+  name String 
+  description String? 
+  createdAt DateTime  @default(now()) 
+  members GroupMember[]
+  
+} 
+
+model GroupMember{
+  groupId String 
+  userId String 
+  role GroupRole @default(MEMBER) 
+  group StudyGroup @relation(fields : [groupId] , references : [id] , onDelete : Cascade)
+   user  User @relation(fields : [userId ] , references : [id] , onDelete : Cascade ) 
+  
+  @@id([groupId , userId]) 
+}
