@@ -1,16 +1,19 @@
-import Link from "next/link"; 
+import Link from "next/link";
 
-export default function Home() { 
-  return ( 
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col justify-center p-8">
-      <p className = "text-sm font-medium text-indigo-600">Athena</p>
-      <h1 className= "mt-2 text-4xl font-bold">Your very own Study Space. </h1>
-      <p className="mt-4 max-w-xl text-slate-600">
-        Track coursewor, focus sessions , resources and group work in one place. 
-      </p> 
-      <Link className="mt-8 w-fit rounded-lg bg-indigo-600 px-4 py-2 text-white" href="/login" >
-        Get Started. 
-      </Link>
-    </main> 
-  )
+export default function HomePage() {
+  return (
+    <main className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-16">
+      <p className="text-sm font-bold tracking-widest text-indigo-600">ATHENA</p>
+      <h1 className="mt-3 max-w-3xl text-5xl font-bold tracking-tight text-slate-950">
+        Your study space, organised.
+      </h1>
+      <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+        Keep coursework and focused study sessions together in one private dashboard.
+      </p>
+      <div className="mt-8 flex gap-3">
+        <Link className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white" href="/register">Create account</Link>
+        <Link className="rounded-lg border border-slate-300 px-5 py-3 font-semibold" href="/login">Log in</Link>
+      </div>
+    </main>
+  );
 }
