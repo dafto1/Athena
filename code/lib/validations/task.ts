@@ -1,10 +1,5 @@
 import { z } from "zod"; 
 
-const optionalDate = z.preprocess(
-  (value) => (value === "" || value == null ? undefined : value), 
-  z.string().datetime().optional(), 
-
-)
 export const taskSchema = z.object({
   title: z.string().trim().min(1, "A task title is required").max(120), 
   description: z.string().trim().max(1000).optional(), 

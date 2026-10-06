@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { message: parsed.error.errors[0].message },
+        { message: parsed.error.issues[0]?.message ?? "Invalid registration details." },
         { status: 400 }
       );
     }

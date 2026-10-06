@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const parsed = taskSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ message: parsed.error.errors[0].message }, { status: 400 });
+    return NextResponse.json({ message: parsed.error.issues[0]?.message ?? "Invalid task." }, { status: 400 });
   }
 
   const task = await prisma.task.create({

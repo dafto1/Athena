@@ -19,7 +19,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const body = await request.json();
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ message: parsed.error.errors[0].message }, { status: 400 });
+    return NextResponse.json({ message: parsed.error.issues[0]?.message ?? "Invalid task update." }, { status: 400 });
   }
 
   const task = await prisma.task.findFirst({ where: { id, userId: user.id } });
