@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { TaskBoard } from "@/components/tasks/task-board";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/ui";
 
 export default async function TasksPage() {
   const user = await getCurrentUser();
@@ -14,10 +15,17 @@ export default async function TasksPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-600">Plan your work</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Tasks</h1>
-      <p className="mt-2 text-slate-600">Keep the next important thing clear.</p>
-      <TaskBoard initialTasks={tasks.map((task) => ({ ...task, dueDate: task.dueDate?.toISOString() ?? null }))} />
+      <PageHeader
+        eyebrow="Plan your work"
+        title="Tasks"
+        description="Keep the next important thing clear."
+      />
+      <TaskBoard
+        initialTasks={tasks.map((task) => ({
+          ...task,
+          dueDate: task.dueDate?.toISOString() ?? null,
+        }))}
+      />
     </div>
   );
 }
