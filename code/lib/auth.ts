@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";
 
 export const authOptions: NextAuthOptions = {
+  // Supports the existing local variable while using NextAuth's canonical name.
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.NEXT_AUTH_SECRET,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
