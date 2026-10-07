@@ -26,6 +26,7 @@ model User {
   createdAt DateTime @default(now()) 
   tasks Task[]  
   studySessions StudySession[]
+  resources Resource[]
  }
 
  model Task { 
@@ -51,4 +52,20 @@ model StudySession {
   userId String 
   user User @relation(fields : [userId] , references: [id] , onDelete : Cascade) 
   @@index([userId, completedAt])
+}
+
+model Resource {
+  id String @id @default(cuid())
+  title String
+  fileName String
+  fileType String
+  fileSize Int
+  fileUrl String
+  category String @default("General")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
 }
