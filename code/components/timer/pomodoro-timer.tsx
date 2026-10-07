@@ -1,107 +1,91 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Card } from "@/components/ui";
+// Orchestrator: wires together all timer sub-components.
+// All logic lives in useTimer; all UI lives in focused child components.
 
-const DURATION_MINUTES = 25;
-const INITIAL_SECONDS = DURATION_MINUTES * 60;
+import { useEffect, useRef, useState } from "react";
+import { Card } from "@/components/ui";
+import { useTimer } from "./use-timer";
+import { TimerDisplay } from "./timer-display";
+import { TimerControls } from "./timer-controls";
+import { TimerDurationPicker } from "./timer-duration-picker";
+import { TimerCompleteBanner } from "./timer-complete-banner";
+import { SessionHistory } from "./session-history";
+
+type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function PomodoroTimer() {
-  const [secondsLeft, setSecondsLeft] = useState(INITIAL_SECONDS);
-  const [running, setRunning] = useState(false);
-  const [startedAt, setStartedAt] = useState<string | null>(null);
-  const [message, setMessage] = useState("");
-  const savedCompletion = useRef(false);
+  const { status, secondsLeft, totalSeconds, durationMin, setDurationMin, start, pause, reset, startedAt } =
+    useTimer(25);
 
-  const finishSession = useCallback(async () => {
-    setRunning(false);
-    if (!startedAt || savedCompletion.current) return;
-    savedCompletion.current = true;
-    const response = await fetch("/api/study-sessions", {
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [historyKey, setHistoryKey] = useState(0);
+  const saveFired = useRef(false);
+
+  // Save session when timer completes (REQ-TIMER-006)
+  useEffect(() => {
+    if (status !== "completed" || saveFired.current || !startedAt) return;
+    saveFired.current = true;
+    setSaveState("saving");
+
+    fetch("/api/study-sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ durationMin: DURATION_MINUTES, startedAt }),
-    });
-    setMessage(
-      response.ok
-        ? "Session complete — saved to your history."
-        : "Session completed, but could not be saved."
-    );
-  }, [startedAt]);
+      body: JSON.stringify({ durationMin, startedAt }),
+    })
+      .then((r) => {
+        setSaveState(r.ok ? "saved" : "error");
+        if (r.ok) setHistoryKey((k) => k + 1); // refresh history
+      })
+      .catch(() => setSaveState("error"));
+  }, [status, startedAt, durationMin]);
 
-  useEffect(() => {
-    if (!running || secondsLeft === 0) return;
-    const timerId = window.setInterval(() => {
-      setSecondsLeft((current) => {
-        if (current <= 1) {
-          void finishSession();
-          return 0;
-        }
-        return current - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(timerId);
-  }, [finishSession, running, secondsLeft]);
-
-  function start() {
-    if (!startedAt) setStartedAt(new Date().toISOString());
-    setRunning(true);
+  // Reset save state guard when user resets
+  function handleReset() {
+    reset();
+    setSaveState("idle");
+    saveFired.current = false;
   }
 
-  function reset() {
-    setRunning(false);
-    setSecondsLeft(INITIAL_SECONDS);
-    setStartedAt(null);
-    setMessage("");
-    savedCompletion.current = false;
-  }
-
-  const minutes = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
-  const seconds = String(secondsLeft % 60).padStart(2, "0");
-  const progress = (secondsLeft / INITIAL_SECONDS) * 100;
+  const isLocked = status === "running" || status === "paused";
 
   return (
-    <Card className="mt-8 max-w-md text-center">
-      <p className="text-sm text-slate-500">25-minute focus session</p>
+    <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1.4fr]">
+      {/* ── Timer card ── */}
+      <Card className="flex flex-col items-center py-8">
+        <p className="text-sm font-semibold uppercase tracking-wider text-violet-600">
+          {status === "idle" && "Ready"}
+          {status === "running" && "Focusing…"}
+          {status === "paused" && "Paused"}
+          {status === "completed" && "Done!"}
+        </p>
 
-      {/* Progress bar */}
-      <div className="my-4 h-1.5 w-full rounded-full bg-slate-100">
-        <div
-          className="h-1.5 rounded-full bg-violet-600 transition-all duration-1000"
-          style={{ width: `${progress}%` }}
+        <TimerDisplay
+          secondsLeft={secondsLeft}
+          totalSeconds={totalSeconds}
+          status={status}
         />
-      </div>
 
-      <p
-        aria-live="polite"
-        className="text-7xl font-bold tabular-nums tracking-tight text-slate-950"
-      >
-        {minutes}:{seconds}
-      </p>
+        <TimerDurationPicker
+          current={durationMin}
+          disabled={isLocked}
+          onChange={setDurationMin}
+        />
 
-      <div className="mt-7 flex justify-center gap-3">
-        <Button
-          onClick={start}
-          disabled={running || secondsLeft === 0}
-          variant="primary"
-        >
-          Start
-        </Button>
-        <Button
-          onClick={() => setRunning(false)}
-          disabled={!running}
-          variant="secondary"
-        >
-          Pause
-        </Button>
-        <Button onClick={reset} variant="secondary">
-          Reset
-        </Button>
-      </div>
+        <TimerControls
+          status={status}
+          onStart={start}
+          onPause={pause}
+          onReset={handleReset}
+        />
 
-      {message && (
-        <p className="mt-5 text-sm font-medium text-emerald-700">{message}</p>
-      )}
-    </Card>
+        {(saveState === "saving" || saveState === "saved" || saveState === "error") && (
+          <TimerCompleteBanner kind={saveState} />
+        )}
+      </Card>
+
+      {/* ── Session history ── */}
+      <SessionHistory refreshKey={historyKey} />
+    </div>
   );
 }
