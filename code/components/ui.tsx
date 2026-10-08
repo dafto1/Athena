@@ -1,6 +1,7 @@
 // Primitive UI components shared across all Athena pages.
 // Each component is small, focused, and styled to match the design system.
 
+import Link from "next/link";
 import { X } from "lucide-react";
 
 // ─── Typography ──────────────────────────────────────────────────────────────
@@ -107,40 +108,138 @@ const sizeClass: Record<ButtonSize, string> = {
   md: "px-4 py-2.5 text-sm",
 };
 
+type ButtonStyleProps = {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+};
+
+function buttonClassName({
+  variant = "primary",
+  size = "md",
+  className,
+}: ButtonStyleProps) {
+  return `inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed ${variantClass[variant]} ${sizeClass[size]} ${className ?? ""}`;
+}
+
+const iconGhostClass =
+  "rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition disabled:cursor-not-allowed disabled:opacity-50";
+const iconDangerClass =
+  "rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition disabled:cursor-not-allowed disabled:opacity-50";
+
 export function Button({
   variant = "primary",
   size = "md",
   className,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-}) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & ButtonStyleProps) {
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed ${variantClass[variant]} ${sizeClass[size]} ${className ?? ""}`}
+      className={buttonClassName({ variant, size, className })}
     />
+  );
+}
+
+export function ButtonLink({
+  href,
+  variant = "primary",
+  size = "md",
+  className,
+  children,
+}: ButtonStyleProps & { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className={buttonClassName({ variant, size, className })}>
+      {children}
+    </Link>
+  );
+}
+
+export function ToolbarButton({
+  label,
+  active = false,
+  children,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <Button
+      {...props}
+      type="button"
+      variant={active ? "primary" : "secondary"}
+      size="sm"
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+    >
+      {children}
+      <span className="hidden sm:inline">{label}</span>
+    </Button>
   );
 }
 
 export function IconButton({
   label,
   variant = "ghost",
+  active = false,
+  className,
   children,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string;
   variant?: "ghost" | "danger";
+  active?: boolean;
 }) {
-  const cls =
-    variant === "danger"
-      ? "rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition"
-      : "rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition";
+  const cls = variant === "danger" ? iconDangerClass : iconGhostClass;
+  const activeCls = active ? "bg-violet-100 text-violet-700" : "";
   return (
-    <button {...props} aria-label={label} title={label} className={cls}>
+    <button
+      {...props}
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      className={`${cls} ${activeCls} ${className ?? ""}`}
+    >
       {children}
     </button>
+  );
+}
+
+export function IconLink({
+  href,
+  label,
+  children,
+  download,
+  external = false,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+  download?: string;
+  external?: boolean;
+}) {
+  if (external) {
+    return (
+      <a
+        href={href}
+        download={download}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        title={label}
+        className={iconGhostClass}
+      >
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} aria-label={label} title={label} className={iconGhostClass}>
+      {children}
+    </Link>
   );
 }
 
@@ -159,13 +258,9 @@ export function ErrorBanner({
       className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow-sm"
     >
       <span>{message}</span>
-      <button
-        onClick={onDismiss}
-        className="ml-3 rounded p-1 hover:bg-rose-100"
-        aria-label="Dismiss error"
-      >
+      <IconButton label="Dismiss error" onClick={onDismiss} className="ml-3">
         <X className="h-4 w-4" />
-      </button>
+      </IconButton>
     </div>
   );
 }
