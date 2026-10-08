@@ -3,8 +3,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getOwnedResource } from "@/lib/resources";
 import { resourceRenameSchema } from "@/lib/validations/resource";
-import { unlink } from "fs/promises";
-import path from "path";
 
 export async function GET(
   _request: Request,
@@ -19,7 +17,10 @@ export async function GET(
     return NextResponse.json({ message: "Resource not found" }, { status: 404 });
   }
 
-  return NextResponse.json(resource);
+  return NextResponse.json({
+    ...resource,
+    fileUrl: `/api/resources/${resource.id}/file`,
+  });
 }
 
 // REQ-RES-006: Students can rename supported resources & change category
@@ -53,9 +54,23 @@ export async function PATCH(
       title: parsed.data.title,
       category: parsed.data.category || existing.category,
     },
+    select: {
+      id: true,
+      title: true,
+      fileName: true,
+      fileType: true,
+      fileSize: true,
+      category: true,
+      createdAt: true,
+      updatedAt: true,
+      userId: true,
+    },
   });
 
-  return NextResponse.json(updated);
+  return NextResponse.json({
+    ...updated,
+    fileUrl: `/api/resources/${updated.id}/file`,
+  });
 }
 
 // REQ-RES-007: Students can delete resources they no longer require
@@ -73,27 +88,10 @@ export async function DELETE(
     return NextResponse.json({ message: "Resource not found" }, { status: 404 });
   }
 
-  // Delete DB record
+  // Delete DB record directly (all file data & annotations cascade deleted from Neon DB)
   await prisma.resource.delete({
     where: { id },
   });
-
-  // Try removing file from disk
-  try {
-    if (existing.fileUrl.startsWith("/uploads/resources/")) {
-      const relativePath = existing.fileUrl.replace("/uploads/resources/", "");
-      const fullPath = path.join(
-        process.cwd(),
-        "public",
-        "uploads",
-        "resources",
-        relativePath
-      );
-      await unlink(fullPath).catch(() => {});
-    }
-  } catch (err) {
-    console.error("Failed to delete physical file:", err);
-  }
 
   return NextResponse.json({ message: "Resource deleted successfully" });
 }

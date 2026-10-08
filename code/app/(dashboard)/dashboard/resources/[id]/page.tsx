@@ -5,7 +5,7 @@ import { PdfWorkspace } from "@/components/pdf-viewer/pdf-workspace";
 import { getCurrentUser } from "@/lib/auth";
 import { isPdfFile } from "@/lib/files";
 import { prisma } from "@/lib/prisma";
-import { getOwnedResource } from "@/lib/resources";
+import { getAccessibleResource } from "@/lib/resources";
 
 export default async function ResourcePdfPage({
   params,
@@ -16,9 +16,11 @@ export default async function ResourcePdfPage({
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const resource = await getOwnedResource(user.id, id);
+  // REQ-GROUP-006 / REQ-GROUP-007: Allow owner or members of shared study groups
+  const resource = await getAccessibleResource(user.id, id);
   if (!resource) notFound();
 
+  // Validate that the file is a PDF
   if (!isPdfFile(resource.fileType, resource.fileName)) {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
@@ -43,6 +45,31 @@ export default async function ResourcePdfPage({
     );
   }
 
+  // If the resource was created before direct DB storage migration and has no fileData
+  if (!resource.fileData) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <PageHeader
+          eyebrow="PDF viewer"
+          title={resource.title}
+          description="File content not found in database."
+        />
+        <Card>
+          <EmptyState
+            icon={FileWarning}
+            title="File content unavailable"
+            description="This resource was uploaded before database file storage was enabled. Please delete and re-upload this PDF file to view it."
+          />
+          <div className="mt-6 flex justify-center">
+            <ButtonLink href="/dashboard/resources" variant="secondary">
+              Back to resources
+            </ButtonLink>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   const annotations = await prisma.annotation.findMany({
     where: { resourceId: resource.id, userId: user.id },
     orderBy: [{ pageNumber: "asc" }, { createdAt: "asc" }],
@@ -52,7 +79,7 @@ export default async function ResourcePdfPage({
     <PdfWorkspace
       resourceId={resource.id}
       title={resource.title}
-      fileUrl={resource.fileUrl}
+      fileUrl={`/api/resources/${resource.id}/file`}
       initialAnnotations={annotations.map((item) => ({
         id: item.id,
         persisted: true,

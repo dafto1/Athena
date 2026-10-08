@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import crypto from "crypto";
 import {
   MAX_FILE_SIZE_BYTES,
   SUPPORTED_FILE_TYPES,
@@ -30,12 +28,29 @@ export async function GET(request: Request) {
     ];
   }
 
+  // Select metadata only (exclude large binary fileData for listing performance)
   const resources = await prisma.resource.findMany({
     where: whereClause,
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      fileName: true,
+      fileType: true,
+      fileSize: true,
+      category: true,
+      createdAt: true,
+      updatedAt: true,
+      userId: true,
+    },
   });
 
-  return NextResponse.json(resources);
+  const formatted = resources.map((r) => ({
+    ...r,
+    fileUrl: `/api/resources/${r.id}/file`,
+  }));
+
+  return NextResponse.json(formatted);
 }
 
 // REQ-RES-001: Students can upload supported academic resources
@@ -90,20 +105,9 @@ export async function POST(request: Request) {
 
     const title = (titleInput?.trim() || path.parse(file.name).name).slice(0, 120);
 
-    // Save file locally to public/uploads/resources
+    // Read binary file into Buffer for direct storage in Neon PostgreSQL (bytea)
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", "resources");
-    await mkdir(uploadsDir, { recursive: true });
-
-    const uniqueId = crypto.randomUUID();
-    const safeFilename = `${uniqueId}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const filePath = path.join(uploadsDir, safeFilename);
-
-    await writeFile(filePath, buffer);
-
-    const fileUrl = `/uploads/resources/${safeFilename}`;
 
     const resource = await prisma.resource.create({
       data: {
@@ -111,13 +115,27 @@ export async function POST(request: Request) {
         fileName: file.name,
         fileType: file.type || fileExtension,
         fileSize: file.size,
-        fileUrl,
+        fileData: buffer, // Stored directly in Neon DB!
         category: categoryInput.trim().slice(0, 50) || "General",
         userId: user.id, // REQ-RES-003
       },
+      select: {
+        id: true,
+        title: true,
+        fileName: true,
+        fileType: true,
+        fileSize: true,
+        category: true,
+        createdAt: true,
+        updatedAt: true,
+        userId: true,
+      },
     });
 
-    return NextResponse.json(resource, { status: 201 });
+    return NextResponse.json(
+      { ...resource, fileUrl: `/api/resources/${resource.id}/file` },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
