@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { exchangeCalendarCode, normalizeProvider } from "@/lib/calendar";
 
+/** Validates the OAuth callback and saves its grant for the initiating user. */
 export async function GET(request: Request, { params }: { params: Promise<{ provider: string }> }) {
   const url = new URL(request.url);
   const { provider: rawProvider } = await params;

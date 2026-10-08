@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { synchronizeCalendarEvents } from "@/lib/calendar";
+import { CalendarSyncBusyError, synchronizeCalendarEvents } from "@/lib/calendar";
 
+/** Returns synchronized events for the authenticated user's requested date range. */
 export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: "Sign in to view calendar events." }, { status: 401 });
@@ -20,6 +21,9 @@ export async function GET(request: Request) {
     return NextResponse.json(result, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("Calendar synchronization could not complete:", error);
+    if (error instanceof CalendarSyncBusyError) {
+      return NextResponse.json({ message: error.message }, { status: 429, headers: { "Retry-After": "2", "Cache-Control": "private, no-store" } });
+    }
     return NextResponse.json({ events: [], errors: [{ provider: null, message: "Calendar synchronization could not be completed. Please retry." }] }, { headers: { "Cache-Control": "private, no-store" } });
   }
 }

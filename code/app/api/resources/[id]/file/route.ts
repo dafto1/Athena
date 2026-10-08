@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // REQ-RES-004, REQ-GROUP-006, REQ-GROUP-007: Stream binary file to owner or group members
+/** Streams an owned or group-shared resource after checking access. */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }

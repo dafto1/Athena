@@ -38,7 +38,8 @@ const links = [
   },
 ];
 
-export function Sidebar() { 
+/** Renders the dashboard navigation for the authenticated user. */
+export function Sidebar() {
   const pathname = usePathname(); 
   return ( 
     <aside className="border-b border-slate-800 bg-slate-950 text-slate-100 lg:flex lg:min-h-screen lg:w-64 lg:flex-col lg:border-b-0 lg:border-r">

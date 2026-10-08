@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { calendarAuthorizationUrl, normalizeProvider } from "@/lib/calendar";
 
+/** Starts the provider OAuth flow and binds its state to the current user. */
 export async function GET(request: Request, { params }: { params: Promise<{ provider: string }> }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: "Sign in before connecting a calendar." }, { status: 401 });

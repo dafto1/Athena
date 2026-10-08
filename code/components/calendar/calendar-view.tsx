@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   addMonths,
   eachDayOfInterval,
@@ -31,6 +31,7 @@ type CalendarEvent = {
   location: string | null;
 };
 type SyncIssue = { provider: Provider | null; message: string };
+type SyncWarning = { provider: Provider; message: string };
 
 const PROVIDERS: { id: Provider; name: string; detail: string; accent: string }[] = [
   { id: "GOOGLE", name: "Google Calendar", detail: "Read your calendar events", accent: "bg-blue-600" },
@@ -38,14 +39,17 @@ const PROVIDERS: { id: Provider; name: string; detail: string; accent: string }[
 ];
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+/** Converts an internal provider value into its API route segment. */
 function providerPath(provider: Provider) {
   return provider.toLowerCase();
 }
 
+/** Parses the normalized start value used by the calendar grid. */
 function eventDate(event: CalendarEvent) {
   return parseISO(event.start);
 }
 
+/** Formats an event's start and end values for accessible titles. */
 function eventTime(event: CalendarEvent) {
   if (event.allDay) return "All day";
   const start = format(eventDate(event), "h:mm a");
@@ -53,6 +57,7 @@ function eventTime(event: CalendarEvent) {
   return `${start} – ${end}`;
 }
 
+/** Maps OAuth callback results to user-facing status messages. */
 function connectionMessage(value: string | undefined) {
   if (value === "connected") return "Calendar connected. Events are synchronizing.";
   if (value === "denied") return "Calendar access was not granted. You can try again whenever you’re ready.";
@@ -61,21 +66,28 @@ function connectionMessage(value: string | undefined) {
   return "";
 }
 
+/** Renders provider controls and a race-safe monthly event calendar. */
 export function CalendarView({ initialNotice = "" }: { initialNotice?: string }) {
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [connections, setConnections] = useState<Connection[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [issues, setIssues] = useState<SyncIssue[]>([]);
+  const [warnings, setWarnings] = useState<SyncWarning[]>([]);
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState("");
   const [disconnecting, setDisconnecting] = useState<Provider | null>(null);
+  const eventRequestId = useRef(0);
+  const eventController = useRef<AbortController | null>(null);
 
   const range = useMemo(() => ({
     start: startOfWeek(startOfMonth(month), { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(month), { weekStartsOn: 1 }),
   }), [month]);
+  const rangeKey = `${range.start.toISOString()}:${range.end.toISOString()}`;
   const days = useMemo(() => eachDayOfInterval(range), [range]);
+  const [loadedRangeKey, setLoadedRangeKey] = useState("");
 
+  /** Loads only connection metadata; provider tokens remain on the server. */
   const loadConnections = useCallback(async () => {
     try {
       const response = await fetch("/api/calendar/connections", { cache: "no-store" });
@@ -87,30 +99,51 @@ export function CalendarView({ initialNotice = "" }: { initialNotice?: string })
     }
   }, []);
 
+  /** Loads the current visible range and discards responses for stale ranges. */
   const loadEvents = useCallback(async () => {
+    eventController.current?.abort();
+    const controller = new AbortController();
+    eventController.current = controller;
+    const requestId = ++eventRequestId.current;
     setLoading(true);
+    setEvents([]);
+    setIssues([]);
+    setWarnings([]);
     try {
       const params = new URLSearchParams({ start: range.start.toISOString(), end: range.end.toISOString() });
-      const response = await fetch(`/api/calendar/events?${params}`, { cache: "no-store" });
+      const response = await fetch(`/api/calendar/events?${params}`, { cache: "no-store", signal: controller.signal });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message ?? "Calendar synchronization could not be completed.");
+      if (requestId !== eventRequestId.current) return;
       setEvents(result.events ?? []);
       setIssues(result.errors ?? []);
+      setWarnings(result.warnings ?? []);
+      setLoadedRangeKey(rangeKey);
     } catch (error) {
+      if (controller.signal.aborted || requestId !== eventRequestId.current) return;
       setIssues([{ provider: null, message: error instanceof Error ? error.message : "Calendar synchronization could not be completed. Please retry." }]);
+      setLoadedRangeKey(rangeKey);
     } finally {
-      setLoading(false);
+      if (requestId === eventRequestId.current) setLoading(false);
     }
-  }, [range]);
+  }, [range, rangeKey]);
 
+  /** Fetches the user's connected provider list when the calendar view loads. */
   useEffect(() => {
-    void loadConnections();
+    const timer = window.setTimeout(() => void loadConnections(), 0);
+    return () => window.clearTimeout(timer);
   }, [loadConnections]);
 
+  /** Refreshes events when the visible month changes and aborts obsolete requests. */
   useEffect(() => {
-    void loadEvents();
+    const timer = window.setTimeout(() => void loadEvents(), 0);
+    return () => {
+      window.clearTimeout(timer);
+      eventController.current?.abort();
+    };
   }, [loadEvents]);
 
+  /** Removes a provider connection and its events from the current view. */
   async function disconnect(provider: Provider) {
     setDisconnecting(provider);
     setConnectionError("");
@@ -120,6 +153,7 @@ export function CalendarView({ initialNotice = "" }: { initialNotice?: string })
       setConnections((current) => current.filter((item) => item.provider !== provider));
       setEvents((current) => current.filter((event) => event.provider !== provider));
       setIssues((current) => current.filter((item) => item.provider !== provider));
+      setWarnings((current) => current.filter((item) => item.provider !== provider));
     } catch (error) {
       setConnectionError(error instanceof Error ? error.message : "Could not disconnect this calendar.");
     } finally {
@@ -127,7 +161,9 @@ export function CalendarView({ initialNotice = "" }: { initialNotice?: string })
     }
   }
 
-  const eventsForDay = (day: Date) => events.filter((event) => isSameDay(eventDate(event), day));
+  /** Selects the events that begin on a particular calendar day. */
+  const displayedEvents = loadedRangeKey === rangeKey ? events : [];
+  const eventsForDay = (day: Date) => displayedEvents.filter((event) => isSameDay(eventDate(event), day));
   const notice = connectionMessage(initialNotice);
 
   return (
@@ -141,6 +177,11 @@ export function CalendarView({ initialNotice = "" }: { initialNotice?: string })
             <RefreshCw className="h-4 w-4" /> Retry sync
           </Button>
         </div>
+      ))}
+      {warnings.map((warning) => (
+        <p key={`${warning.provider}-${warning.message}`} role="status" className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          {PROVIDERS.find((provider) => provider.id === warning.provider)?.name}: {warning.message}
+        </p>
       ))}
 
       <Card>
@@ -182,7 +223,7 @@ export function CalendarView({ initialNotice = "" }: { initialNotice?: string })
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
           <div>
             <h2 className="text-lg font-bold text-slate-950">{format(month, "MMMM yyyy")}</h2>
-            <p className="text-sm text-slate-500">{loading ? "Synchronizing events…" : `${events.length} synchronized ${events.length === 1 ? "event" : "events"}`}</p>
+            <p className="text-sm text-slate-500">{loading || loadedRangeKey !== rangeKey ? "Synchronizing events…" : `${displayedEvents.length} synchronized ${displayedEvents.length === 1 ? "event" : "events"}`}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => setMonth((current) => subMonths(current, 1))} aria-label="Previous month"><ArrowLeft className="h-4 w-4" /></Button>
@@ -212,7 +253,7 @@ export function CalendarView({ initialNotice = "" }: { initialNotice?: string })
             );
           })}
         </div>
-        {!loading && events.length === 0 && connections.length === 0 && (
+        {!loading && loadedRangeKey === rangeKey && displayedEvents.length === 0 && connections.length === 0 && (
           <p className="border-t border-slate-200 px-5 py-4 text-sm text-slate-600">Connect a calendar above to see your synchronized academic schedule here.</p>
         )}
       </Card>
