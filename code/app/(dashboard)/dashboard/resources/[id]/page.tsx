@@ -52,7 +52,7 @@ export default async function ResourcePdfPage({
     <PdfWorkspace
       resourceId={resource.id}
       title={resource.title}
-      fileUrl={resource.fileUrl}
+      fileUrl={`/api/resources/${resource.id}/file`}
       initialAnnotations={annotations.map((item) => ({
         id: item.id,
         persisted: true,
