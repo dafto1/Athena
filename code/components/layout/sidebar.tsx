@@ -3,7 +3,7 @@
 import Link from "next/link"; 
 import { signOut } from "next-auth/react"; 
 import { usePathname } from "next/navigation"; 
-import { FolderOpen, LayoutDashboard, ListTodo, LogOut, Timer, Users } from "lucide-react";
+import { CalendarDays, FolderOpen, LayoutDashboard, ListTodo, LogOut, Timer, Users } from "lucide-react";
 
 const links = [
   {
@@ -15,6 +15,11 @@ const links = [
     href: "/dashboard/tasks",
     label: "Tasks",
     icon: ListTodo,
+  },
+  {
+    href: "/dashboard/calendar",
+    label: "Calendar",
+    icon: CalendarDays,
   },
   {
     href: "/dashboard/timer",
@@ -33,7 +38,8 @@ const links = [
   },
 ];
 
-export function Sidebar() { 
+/** Renders the dashboard navigation for the authenticated user. */
+export function Sidebar() {
   const pathname = usePathname(); 
   return ( 
     <aside className="border-b border-slate-800 bg-slate-950 text-slate-100 lg:flex lg:min-h-screen lg:w-64 lg:flex-col lg:border-b-0 lg:border-r">
