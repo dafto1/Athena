@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// REQ-RES-004, REQ-GROUP-006, REQ-GROUP-007: Stream binary file to owner or group members
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -13,7 +14,23 @@ export async function GET(
 
   const { id } = await params;
   const resource = await prisma.resource.findFirst({
-    where: { id, userId: user.id },
+    where: {
+      id,
+      OR: [
+        { userId: user.id },
+        {
+          groupShares: {
+            some: {
+              group: {
+                members: {
+                  some: { userId: user.id },
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
     select: {
       fileName: true,
       fileType: true,

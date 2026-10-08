@@ -1,30 +1,33 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { CheckCircle2, Clock3, FolderOpen, ListTodo } from "lucide-react";
+import { CheckCircle2, Clock3, FolderOpen, ListTodo, Users } from "lucide-react";
 import { Card, PageHeader } from "@/components/ui";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [pendingTasks, completedTasks, sessions, resourcesCount, nextTask] = await Promise.all([
-    prisma.task.count({ where: { userId: user.id, completed: false } }),
-    prisma.task.count({ where: { userId: user.id, completed: true } }),
-    prisma.studySession.count({ where: { userId: user.id } }),
-    prisma.resource.count({ where: { userId: user.id } }),
-    prisma.task.findFirst({
-      where: { userId: user.id, completed: false },
-      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
-      select: { title: true, dueDate: true, priority: true },
-    }),
-  ]);
+  const [pendingTasks, completedTasks, sessions, resourcesCount, groupsCount, nextTask] =
+    await Promise.all([
+      prisma.task.count({ where: { userId: user.id, completed: false } }),
+      prisma.task.count({ where: { userId: user.id, completed: true } }),
+      prisma.studySession.count({ where: { userId: user.id } }),
+      prisma.resource.count({ where: { userId: user.id } }),
+      prisma.studyGroupMember.count({ where: { userId: user.id } }),
+      prisma.task.findFirst({
+        where: { userId: user.id, completed: false },
+        orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+        select: { title: true, dueDate: true, priority: true },
+      }),
+    ]);
 
   const cards = [
     { label: "Open tasks", value: pendingTasks, icon: ListTodo, tone: "bg-violet-100 text-violet-700" },
     { label: "Tasks completed", value: completedTasks, icon: CheckCircle2, tone: "bg-emerald-100 text-emerald-700" },
     { label: "Focus sessions", value: sessions, icon: Clock3, tone: "bg-amber-100 text-amber-700" },
     { label: "Study resources", value: resourcesCount, icon: FolderOpen, tone: "bg-blue-100 text-blue-700" },
+    { label: "Study groups", value: groupsCount, icon: Users, tone: "bg-purple-100 text-purple-700" },
   ];
 
   return (
@@ -35,12 +38,12 @@ export default async function DashboardPage() {
         description="Make a small, useful step on your work today."
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map(({ label, value, icon: Icon, tone }) => (
           <Card key={label} className="p-5">
             <Icon className={`mb-5 h-10 w-10 rounded-xl p-2 ${tone}`} aria-hidden="true" />
             <p className="text-sm font-medium text-slate-600">{label}</p>
-            <p className="mt-1 text-4xl font-bold tracking-tight text-slate-950">{value}</p>
+            <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{value}</p>
           </Card>
         ))}
       </section>

@@ -5,7 +5,7 @@ import { PdfWorkspace } from "@/components/pdf-viewer/pdf-workspace";
 import { getCurrentUser } from "@/lib/auth";
 import { isPdfFile } from "@/lib/files";
 import { prisma } from "@/lib/prisma";
-import { getOwnedResource } from "@/lib/resources";
+import { getAccessibleResource } from "@/lib/resources";
 
 export default async function ResourcePdfPage({
   params,
@@ -16,7 +16,8 @@ export default async function ResourcePdfPage({
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const resource = await getOwnedResource(user.id, id);
+  // REQ-GROUP-006 / REQ-GROUP-007: Allow owner or members of shared study groups
+  const resource = await getAccessibleResource(user.id, id);
   if (!resource) notFound();
 
   // Validate that the file is a PDF
