@@ -19,6 +19,7 @@ export default async function ResourcePdfPage({
   const resource = await getOwnedResource(user.id, id);
   if (!resource) notFound();
 
+  // Validate that the file is a PDF
   if (!isPdfFile(resource.fileType, resource.fileName)) {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
@@ -32,6 +33,31 @@ export default async function ResourcePdfPage({
             icon={FileWarning}
             title="This file cannot be opened as a PDF"
             description="Choose a PDF from your resources, or download this file instead."
+          />
+          <div className="mt-6 flex justify-center">
+            <ButtonLink href="/dashboard/resources" variant="secondary">
+              Back to resources
+            </ButtonLink>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // If the resource was created before direct DB storage migration and has no fileData
+  if (!resource.fileData) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <PageHeader
+          eyebrow="PDF viewer"
+          title={resource.title}
+          description="File content not found in database."
+        />
+        <Card>
+          <EmptyState
+            icon={FileWarning}
+            title="File content unavailable"
+            description="This resource was uploaded before database file storage was enabled. Please delete and re-upload this PDF file to view it."
           />
           <div className="mt-6 flex justify-center">
             <ButtonLink href="/dashboard/resources" variant="secondary">
