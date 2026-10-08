@@ -27,6 +27,7 @@ model User {
   tasks Task[]  
   studySessions StudySession[]
   resources Resource[]
+  annotations Annotation[]
  }
 
  model Task { 
@@ -66,6 +67,32 @@ model Resource {
   updatedAt DateTime @updatedAt
   userId String
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  annotations Annotation[]
 
   @@index([userId, category])
+}
+
+enum AnnotationType {
+  HIGHLIGHT
+  NOTE
+}
+
+model Annotation {
+  id         String         @id @default(cuid())
+  type       AnnotationType
+  pageNumber Int
+  content    String?
+  color      String         @default("#facc15")
+  xPct       Float
+  yPct       Float
+  wPct       Float          @default(0)
+  hPct       Float          @default(0)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  resourceId String
+  resource   Resource       @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId, userId, pageNumber])
 }

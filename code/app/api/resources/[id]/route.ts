@@ -1,9 +1,26 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getOwnedResource } from "@/lib/resources";
 import { resourceRenameSchema } from "@/lib/validations/resource";
 import { unlink } from "fs/promises";
 import path from "path";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ message: "Unauthorised" }, { status: 401 });
+
+  const { id } = await params;
+  const resource = await getOwnedResource(user.id, id);
+  if (!resource) {
+    return NextResponse.json({ message: "Resource not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(resource);
+}
 
 // REQ-RES-006: Students can rename supported resources & change category
 export async function PATCH(
@@ -14,11 +31,9 @@ export async function PATCH(
   if (!user) return NextResponse.json({ message: "Unauthorised" }, { status: 401 });
 
   const { id } = await params;
-  const existing = await prisma.resource.findUnique({
-    where: { id },
-  });
+  const existing = await getOwnedResource(user.id, id);
 
-  if (!existing || existing.userId !== user.id) {
+  if (!existing) {
     return NextResponse.json({ message: "Resource not found" }, { status: 404 });
   }
 
@@ -52,11 +67,9 @@ export async function DELETE(
   if (!user) return NextResponse.json({ message: "Unauthorised" }, { status: 401 });
 
   const { id } = await params;
-  const existing = await prisma.resource.findUnique({
-    where: { id },
-  });
+  const existing = await getOwnedResource(user.id, id);
 
-  if (!existing || existing.userId !== user.id) {
+  if (!existing) {
     return NextResponse.json({ message: "Resource not found" }, { status: 404 });
   }
 

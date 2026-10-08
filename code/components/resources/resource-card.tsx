@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, IconButton } from "@/components/ui";
+import { Badge, IconButton, IconLink } from "@/components/ui";
 import {
   FileText,
   FileCode,
@@ -12,7 +12,9 @@ import {
   Trash2,
   Edit2,
   Calendar,
+  BookOpen,
 } from "lucide-react";
+import { isPdfFile } from "@/lib/files";
 import { formatBytes, type Resource } from "./types";
 
 function getFileIcon(type: string, name: string) {
@@ -87,16 +89,19 @@ export function ResourceCard({
         </div>
 
         <div className="flex items-center gap-1">
-          <a
+          {isPdfFile(resource.fileType, resource.fileName) && (
+            <IconLink href={`/dashboard/resources/${resource.id}`} label="Open PDF in Athena">
+              <BookOpen className="h-4 w-4" />
+            </IconLink>
+          )}
+          <IconLink
             href={resource.fileUrl}
+            label="Download file"
             download={resource.fileName}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
-            title="Download / View"
+            external
           >
             <Download className="h-4 w-4" />
-          </a>
+          </IconLink>
           <IconButton label="Edit details" onClick={() => onEdit(resource)}>
             <Edit2 className="h-4 w-4" />
           </IconButton>
