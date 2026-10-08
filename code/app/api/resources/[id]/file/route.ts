@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const user = await getCurrentUser();
   if (!user) {
-    return new NextResponse("Unauthorised", { status: 401 });
+    return NextResponse.json({ message: "Unauthorised" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -40,7 +40,7 @@ export async function GET(
   });
 
   if (!resource || !resource.fileData) {
-    return new NextResponse("Resource file not found", { status: 404 });
+    return NextResponse.json({ message: "Resource file not found" }, { status: 404 });
   }
 
   // Stream binary file data directly from Neon Postgres

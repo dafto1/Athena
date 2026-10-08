@@ -3,7 +3,7 @@
 import Link from "next/link"; 
 import { signOut } from "next-auth/react"; 
 import { usePathname } from "next/navigation"; 
-import { FolderOpen, LayoutDashboard, ListTodo, LogOut, Timer, Users } from "lucide-react";
+import { CalendarDays, FolderOpen, LayoutDashboard, ListTodo, LogOut, Timer, Users } from "lucide-react";
 
 const links = [
   {
@@ -15,6 +15,11 @@ const links = [
     href: "/dashboard/tasks",
     label: "Tasks",
     icon: ListTodo,
+  },
+  {
+    href: "/dashboard/calendar",
+    label: "Calendar",
+    icon: CalendarDays,
   },
   {
     href: "/dashboard/timer",

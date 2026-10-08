@@ -29,7 +29,30 @@ model User {
   createdGroups StudyGroup[] @relation("CreatedGroups")
   groupMemberships StudyGroupMember[]
   sharedResources GroupResource[]
+ calendarConnections CalendarConnection[]
  }
+
+enum CalendarProvider {
+  GOOGLE
+  OUTLOOK
+}
+
+model CalendarConnection {
+  id                String           @id @default(cuid())
+  provider          CalendarProvider
+  providerAccountId String
+  accessToken       String
+  refreshToken      String
+  expiresAt         DateTime
+  scope             String?
+  connectedAt       DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
+}
 
  model Task { 
   id String @id @default(cuid())  
