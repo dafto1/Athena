@@ -7,11 +7,23 @@ const globalForPrisma = globalThis as unknown as {
   pool?: Pool;
 };
 
+function databaseConnectionString(value: string | undefined) {
+  if (!value) return value;
+
+  const url = new URL(value);
+  if (["prefer", "require", "verify-ca"].includes(url.searchParams.get("sslmode") ?? "")) {
+    // Keep pg's current secure behavior explicit before pg v9 changes these modes.
+    url.searchParams.set("sslmode", "verify-full");
+  }
+
+  return url.toString();
+}
+
 // Neon connection configuration with keepAlive & error handlers
 const pool =
   globalForPrisma.pool ??
   new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: databaseConnectionString(process.env.DATABASE_URL),
     max: 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
