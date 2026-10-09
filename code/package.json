@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/copy-pdf-assets.cjs && next dev",
+    "build": "node scripts/copy-pdf-assets.cjs && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node scripts/copy-pdf-assets.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -23,6 +24,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.86.0",
+    "react-pdf": "^11.0.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.15"
   },

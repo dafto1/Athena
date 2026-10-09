@@ -17,3 +17,12 @@ body {
 button , input,  select ,textarea{font : inherit;} 
 button { cursor : pointer; }
 button:disabled { cursor: not-allowed; }
+
+.react-pdf__Page {
+  position: relative;
+}
+
+.react-pdf__Page__textContent mark {
+  background: rgb(250 204 21 / 0.55);
+  color: inherit;
+}
