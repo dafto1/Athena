@@ -21,7 +21,7 @@ export function GroupMemberListModal({
             className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-stone-700">
                 {member.role === "ADMIN" ? (
                   <Shield className="h-4 w-4" />
                 ) : (

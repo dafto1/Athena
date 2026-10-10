@@ -2,8 +2,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Button, EmptyState, IconButton } from "@/components/ui";
-import { Users, Plus, Copy, Check, FolderOpen } from "lucide-react";
+import { EmptyState, IconButton } from "@/components/ui";
+import { Copy, Check, FolderOpen } from "lucide-react";
 import { GroupFoldersBar } from "./group-folders-bar";
 import { GroupResourceCard } from "./group-resource-card";
 import { ShareResourceModal } from "./share-resource-modal";
@@ -72,8 +72,7 @@ export function GroupDetailView({
       {/* Group Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">{group.name}</h2>
-          {group.description && <p className="mt-1 text-sm text-slate-600">{group.description}</p>}
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Study Group: {group.name}</h2>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -85,25 +84,17 @@ export function GroupDetailView({
             </IconButton>
           </div>
 
-          <Button variant="secondary" size="sm" onClick={() => setShowMembersModal(true)}>
-            <Users className="h-4 w-4" />
-            Members ({group.members.length})
-          </Button>
-
-          <Button variant="primary" size="sm" onClick={() => setShowShareModal(true)}>
-            <Plus className="h-4 w-4" />
-            Share Resource
-          </Button>
         </div>
       </div>
 
       {/* Folders Navigation (REQ-GROUP-008) */}
       <GroupFoldersBar
-        groupId={group.id}
         folders={group.folders}
         selectedFolderId={selectedFolderId}
         onSelectFolder={(id) => startTransition(() => setSelectedFolderId(id))}
-        onFolderCreated={fetchGroup}
+        memberCount={group.members.length}
+        onMembers={() => setShowMembersModal(true)}
+        onShare={() => setShowShareModal(true)}
       />
 
       {/* Shared Resources Grid */}

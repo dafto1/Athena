@@ -183,12 +183,9 @@ export function TaskBoard({ initialTasks }: { initialTasks: Task[] }) {
         {/* Create Task */}
         <Card>
           <h2 className="flex items-center gap-2 text-base font-bold text-slate-950">
-            <Plus className="h-5 w-5 text-violet-600" />
+            <Plus className="h-5 w-5 text-stone-600" />
             Add a task
           </h2>
-          <p className="mt-1 mb-5 text-xs text-slate-500">
-            Track assignments, study goals, or exams.
-          </p>
           <TaskForm
             onSubmit={handleCreate}
             loading={creating}

@@ -54,18 +54,22 @@ export function PdfToolbar({
   onSave: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:flex-row lg:flex-wrap lg:items-center">
-      <div className="flex items-center gap-1">
+    <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+      <div className="flex shrink-0 items-center gap-1">
         <IconButton label="Previous page" onClick={onPrevPage} disabled={pageNumber <= 1}>
           <ChevronLeft className="h-4 w-4" />
         </IconButton>
         <Input
           aria-label="Page number"
-          className="w-16 px-2 py-1.5 text-center"
+          className="!w-14 !min-w-0 px-1.5 py-1.5 text-center tabular-nums"
+          type="number"
+          min={1}
+          max={numPages || undefined}
           value={Number.isNaN(pageNumber) ? "" : pageNumber}
           onChange={(event) => onPageInput(event.target.value)}
         />
-        <span className="px-1 text-sm text-slate-500">/ {numPages || "—"}</span>
+        <span className="whitespace-nowrap px-1 text-sm text-slate-500">/ {numPages || "—"}</span>
         <IconButton
           label="Next page"
           onClick={onNextPage}
@@ -75,7 +79,7 @@ export function PdfToolbar({
         </IconButton>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1 border-l border-slate-200 pl-3">
         <IconButton label="Zoom out" onClick={onZoomOut} disabled={zoom <= MIN_ZOOM}>
           <ZoomOut className="h-4 w-4" />
         </IconButton>
@@ -88,7 +92,7 @@ export function PdfToolbar({
       </div>
 
       <form
-        className="flex min-w-0 flex-1 items-center gap-1"
+        className="flex min-w-0 flex-1 basis-72 items-center gap-2"
         onSubmit={(event) => {
           event.preventDefault();
           onSearch();
@@ -97,10 +101,11 @@ export function PdfToolbar({
         <Input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
+          className="!w-auto !min-w-0 flex-1"
           placeholder="Search in this PDF"
           aria-label="Search in this PDF"
         />
-        <Button type="submit" variant="secondary" size="sm">
+        <Button type="submit" variant="secondary" size="sm" className="shrink-0">
           Find
         </Button>
         <IconButton label="Previous match" onClick={onPrevMatch} disabled={!matchLabel}>
@@ -111,8 +116,10 @@ export function PdfToolbar({
         </IconButton>
         {matchLabel && <span className="whitespace-nowrap text-xs text-slate-500">{matchLabel}</span>}
       </form>
+      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+        <div className="flex flex-wrap items-center gap-2">
         <ToolbarButton label="Select" active={tool === "select"} onClick={() => onToolChange("select")}>
           <MousePointer2 className="h-4 w-4" />
         </ToolbarButton>
@@ -126,6 +133,7 @@ export function PdfToolbar({
         <ToolbarButton label="Note" active={tool === "note"} onClick={() => onToolChange("note")}>
           <StickyNote className="h-4 w-4" />
         </ToolbarButton>
+        </div>
         <Button variant="primary" size="sm" onClick={onSave} disabled={!hasDrafts || saving}>
           {saving ? "Saving…" : "Save annotations"}
         </Button>

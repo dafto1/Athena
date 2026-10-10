@@ -13,14 +13,7 @@ export type Resource = {
   userId: string;
 };
 
-export const RESOURCE_CATEGORIES = [
-  "General",
-  "Lecture Notes",
-  "Assignments",
-  "Research Papers",
-  "Syllabus",
-  "Past Exams",
-] as const;
+export const RESOURCE_CATEGORIES = ["General"] as const;
 
 export type ResourceCategory = (typeof RESOURCE_CATEGORIES)[number];
 

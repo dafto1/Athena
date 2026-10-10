@@ -2,8 +2,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Button, Modal, EmptyState } from "@/components/ui";
-import { Plus, FolderOpen } from "lucide-react";
+import { Modal, EmptyState } from "@/components/ui";
+import { FolderOpen } from "lucide-react";
 import { ResourceCard } from "./resource-card";
 import { ResourceUploadForm } from "./resource-upload-form";
 import { ResourceEditModal } from "./resource-edit-modal";
@@ -17,6 +17,7 @@ export function ResourceManager() {
   const [search, setSearch] = useState("");
   const [showUpload, setShowUpload] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [categories, setCategories] = useState<string[]>(["All"]);
   const [, startTransition] = useTransition();
 
   async function fetchResources() {
@@ -30,6 +31,7 @@ export function ResourceManager() {
       if (res.ok) {
         const data = await res.json();
         setResources(data);
+        setCategories((current) => [...new Set(["All", ...current.filter((item) => item !== "All"), ...data.map((item: Resource) => item.category)])]);
       }
     } catch (err) {
       console.error("Failed to fetch resources:", err);
@@ -42,34 +44,38 @@ export function ResourceManager() {
     fetchResources();
   }, [category, search]);
 
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("athena-resource-categories") ?? "[]");
+      if (Array.isArray(saved)) {
+        setCategories((current) => [...new Set(["All", ...current.slice(1), ...saved.filter((item): item is string => typeof item === "string")])]);
+      }
+    } catch {
+      // Ignore invalid saved category data and keep the resource-derived categories.
+    }
+  }, []);
+
+  function addCategory(value: string) {
+    const next = [...new Set([...categories, value])];
+    setCategories(next);
+    try {
+      localStorage.setItem("athena-resource-categories", JSON.stringify(next.filter((item) => item !== "All")));
+    } catch {
+      // The category remains available for this session if browser storage is unavailable.
+    }
+  }
+
   function handleResourceDeleted(id: string) {
     setResources((prev) => prev.filter((r) => r.id !== id));
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900">
-            Study Materials & Files
-          </h2>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {resources.length} {resources.length === 1 ? "resource" : "resources"} found
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          onClick={() => setShowUpload(true)}
-          className="flex items-center gap-1.5"
-        >
-          <Plus className="h-4 w-4" />
-          Upload Resource
-        </Button>
-      </div>
-
       {/* Filter and Search */}
       <ResourceFilters
+        categories={categories}
+        onAddCategory={addCategory}
+        onUpload={() => setShowUpload(true)}
         selectedCategory={category}
         onSelectCategory={(c) => startTransition(() => setCategory(c))}
         searchQuery={search}
@@ -113,6 +119,8 @@ export function ResourceManager() {
       {showUpload && (
         <Modal title="Upload Study Resource" onClose={() => setShowUpload(false)}>
           <ResourceUploadForm
+            categories={categories.filter((item) => item !== "All")}
+            initialCategory={category === "All" ? "General" : category}
             onSuccess={() => {
               setShowUpload(false);
               fetchResources();
@@ -130,6 +138,7 @@ export function ResourceManager() {
         >
           <ResourceEditModal
             resource={editingResource}
+            categories={categories.filter((item) => item !== "All")}
             onClose={() => setEditingResource(null)}
             onUpdated={() => {
               fetchResources();

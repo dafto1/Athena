@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { ButtonLink, Card, ErrorBanner, PageHeader } from "@/components/ui";
+import { ButtonLink, Card, ErrorBanner } from "@/components/ui";
 import { PdfNoteComposer } from "./pdf-note-composer";
 import { PdfToolbar } from "./pdf-toolbar";
 import { useAnnotations } from "./use-annotations";
@@ -42,16 +42,12 @@ export function PdfWorkspace({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageHeader
-          eyebrow="PDF viewer"
-          title={title}
-          description="Read, search, and annotate this document. Unsaved marks stay on this page until you save."
-        />
+      <div className="flex flex-col items-start gap-4">
         <ButtonLink href="/dashboard/resources" variant="secondary" size="sm">
           <ArrowLeft className="h-4 w-4" />
           Back to resources
         </ButtonLink>
+        <h1 className="break-words text-3xl font-semibold tracking-tight text-[#37352f]">{title.replaceAll("_", " ")}</h1>
       </div>
 
       <PdfToolbar
@@ -96,7 +92,7 @@ export function PdfWorkspace({
         </p>
       )}
 
-      <Card className="overflow-auto bg-slate-100 p-4">
+      <Card className="flex justify-center overflow-auto bg-slate-100 p-4">
         <PdfDocument
           fileUrl={fileUrl}
           pageNumber={viewer.pageNumber || 1}

@@ -16,9 +16,8 @@ export default async function TasksPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        eyebrow="Plan your work"
+        eyebrow=""
         title="Tasks"
-        description="Keep the next important thing clear."
       />
       <TaskBoard
         initialTasks={tasks.map((task) => ({

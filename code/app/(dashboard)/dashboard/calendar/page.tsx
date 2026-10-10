@@ -11,9 +11,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <PageHeader
-        eyebrow="Your schedule"
+        eyebrow=""
         title="Calendar"
-        description="Connect Google Calendar or Outlook to view your synchronized academic events."
       />
       <CalendarView initialNotice={notice} />
     </div>

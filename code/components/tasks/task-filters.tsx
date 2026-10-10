@@ -46,7 +46,7 @@ export function TaskFilters({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search tasks…"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 py-2 text-sm outline-none transition focus:border-violet-500 focus:bg-white focus:ring-2 focus:ring-violet-100"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 py-2 text-sm outline-none transition focus:border-stone-500 focus:bg-white focus:ring-2 focus:ring-stone-100"
           />
           {searchQuery && (
             <button
@@ -69,7 +69,7 @@ export function TaskFilters({
           </button>
           <button
             onClick={() => onStatusChange("PENDING")}
-            className={statusBtnClass(statusFilter === "PENDING", "text-violet-700")}
+            className={statusBtnClass(statusFilter === "PENDING", "text-stone-700")}
           >
             Pending ({counts.pending})
           </button>
@@ -99,19 +99,19 @@ export function TaskFilters({
           </Select>
         </div>
 
-        <div className="flex items-center gap-2 sm:ml-auto">
-          <span className="font-medium">Sort by:</span>
+        <label className="flex min-w-0 items-center gap-2 sm:ml-auto">
+          <span className="shrink-0 whitespace-nowrap font-medium text-slate-600">Sort by</span>
           <Select
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value as SortBy)}
-            className="!py-1 !px-2 !text-xs"
+            className="!w-auto min-w-0 max-w-56 !py-1 !px-2 !text-xs"
           >
             <option value="DUE_DATE">Deadline (Earliest)</option>
             <option value="PRIORITY">Priority (Highest)</option>
             <option value="STATUS">Completion Status</option>
             <option value="TITLE">Title (A–Z)</option>
           </Select>
-        </div>
+        </label>
       </div>
     </div>
   );

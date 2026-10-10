@@ -49,8 +49,8 @@ export function TimerDurationPicker({
             onClick={() => handlePreset(p)}
             className={`rounded-full border px-3 py-1 text-xs font-semibold transition
               ${current === p
-                ? "border-violet-600 bg-violet-600 text-white"
-                : "border-slate-300 text-slate-600 hover:border-violet-400 hover:text-violet-700"
+                ? "border-stone-600 bg-stone-600 text-white"
+                : "border-slate-300 text-slate-600 hover:border-stone-400 hover:text-stone-700"
               } disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {p} min

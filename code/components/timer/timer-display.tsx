@@ -25,7 +25,7 @@ export function TimerDisplay({
       ? "stroke-emerald-500"
       : status === "paused"
       ? "stroke-amber-400"
-      : "stroke-violet-600";
+      : "stroke-stone-600";
 
   return (
     <div className="relative mx-auto flex h-52 w-52 items-center justify-center">

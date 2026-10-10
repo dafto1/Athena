@@ -8,11 +8,13 @@ export function TimerControls({
   onStart,
   onPause,
   onReset,
+  onEnd,
 }: {
   status: TimerStatus;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
+  onEnd: () => void;
 }) {
   const isRunning = status === "running";
   const isDone = status === "completed";
@@ -33,6 +35,7 @@ export function TimerControls({
       <Button onClick={onReset} variant="secondary">
         Reset
       </Button>
+      {(isRunning || status === "paused") && <Button onClick={onEnd} variant="danger">End session</Button>}
     </div>
   );
 }

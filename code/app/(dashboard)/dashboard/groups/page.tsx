@@ -5,9 +5,8 @@ export default function StudyGroupsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <PageHeader
-        eyebrow="Collaboration"
+        eyebrow=""
         title="Study Groups"
-        description="Collaborate with peers, organize shared folders, and share course study materials."
       />
       <GroupListView />
     </div>

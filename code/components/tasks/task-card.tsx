@@ -38,7 +38,7 @@ export function TaskCard({ task, onToggle, onEdit, onDelete }: TaskCardProps) {
         type="button"
         onClick={() => onToggle(task)}
         aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
-        className="mt-0.5 text-slate-400 transition hover:text-violet-600"
+        className="mt-0.5 text-slate-400 transition hover:text-stone-600"
       >
         {task.completed ? (
           <CheckCircle2 className="h-5 w-5 text-emerald-600" />

@@ -3,16 +3,18 @@
 
 import { useState } from "react";
 import { Button, Field, Input, Select, ErrorBanner } from "@/components/ui";
-import { RESOURCE_CATEGORIES, type Resource } from "./types";
+import type { Resource } from "./types";
 
 export function ResourceEditModal({
   resource,
   onClose,
   onUpdated,
+  categories,
 }: {
   resource: Resource;
   onClose: () => void;
   onUpdated: () => void;
+  categories: string[];
 }) {
   const [title, setTitle] = useState(resource.title);
   const [category, setCategory] = useState(resource.category);
@@ -66,7 +68,7 @@ export function ResourceEditModal({
 
       <Field label="Category / Folder">
         <Select value={category} onChange={(e) => setCategory(e.target.value)}>
-          {RESOURCE_CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <option key={cat} value={cat}>
               {cat}
             </option>

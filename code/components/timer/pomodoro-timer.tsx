@@ -47,13 +47,32 @@ export function PomodoroTimer() {
     saveFired.current = false;
   }
 
+  function handleEnd() {
+    const elapsedMinutes = Math.floor((totalSeconds - secondsLeft) / 60);
+    if (elapsedMinutes < 1 || !startedAt) {
+      handleReset();
+      return;
+    }
+    setSaveState("saving");
+    saveFired.current = true;
+    fetch("/api/study-sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ durationMin: elapsedMinutes, startedAt }),
+    }).then((response) => {
+      setSaveState(response.ok ? "saved" : "error");
+      if (response.ok) setHistoryKey((key) => key + 1);
+    }).catch(() => setSaveState("error"));
+    reset();
+  }
+
   const isLocked = status === "running" || status === "paused";
 
   return (
     <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1.4fr]">
       {/* ── Timer card ── */}
       <Card className="flex flex-col items-center py-8">
-        <p className="text-sm font-semibold uppercase tracking-wider text-violet-600">
+        <p className="text-sm font-semibold uppercase tracking-wider text-stone-600">
           {status === "idle" && "Ready"}
           {status === "running" && "Focusing…"}
           {status === "paused" && "Paused"}
@@ -77,6 +96,7 @@ export function PomodoroTimer() {
           onStart={start}
           onPause={pause}
           onReset={handleReset}
+          onEnd={handleEnd}
         />
 
         {(saveState === "saving" || saveState === "saved" || saveState === "error") && (
@@ -85,7 +105,7 @@ export function PomodoroTimer() {
       </Card>
 
       {/* ── Session history ── */}
-      <SessionHistory refreshKey={historyKey} />
+      <div className="pt-8 lg:pt-0"><SessionHistory refreshKey={historyKey} /></div>
     </div>
   );
 }

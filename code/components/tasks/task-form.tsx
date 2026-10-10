@@ -65,6 +65,7 @@ export function TaskForm({
           <Input
             name="dueDate"
             type="date"
+            className="w-full min-w-0 max-w-full px-2 pr-2 text-[13px] sm:text-sm"
             defaultValue={defaultValues?.dueDate ?? ""}
           />
         </Field>

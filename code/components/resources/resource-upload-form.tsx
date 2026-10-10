@@ -4,7 +4,6 @@
 import { useState } from "react";
 import { Button, Field, Input, Select, ErrorBanner } from "@/components/ui";
 import {
-  RESOURCE_CATEGORIES,
   SUPPORTED_FILE_TYPES,
   MAX_FILE_SIZE_BYTES,
   formatBytes,
@@ -14,13 +13,17 @@ import { UploadCloud } from "lucide-react";
 export function ResourceUploadForm({
   onSuccess,
   onCancel,
+  categories,
+  initialCategory,
 }: {
   onSuccess: () => void;
   onCancel: () => void;
+  categories: string[];
+  initialCategory: string;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<string>("General");
+  const [category, setCategory] = useState<string>(initialCategory);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -100,8 +103,8 @@ export function ResourceUploadForm({
       {error && <ErrorBanner message={error} onDismiss={() => setError("")} />}
 
       <Field label="Resource File" required>
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 p-6 transition hover:border-violet-400">
-          <UploadCloud className="h-8 w-8 text-violet-500" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 p-6 transition hover:border-stone-400">
+          <UploadCloud className="h-8 w-8 text-stone-500" />
           <p className="mt-2 text-xs font-semibold text-slate-700">
             {file ? file.name : "Click or browse to choose academic resource"}
           </p>
@@ -112,7 +115,7 @@ export function ResourceUploadForm({
             type="file"
             accept={acceptedExtensions}
             onChange={handleFileChange}
-            className="mt-3 block text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-violet-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-violet-700 hover:file:bg-violet-100"
+            className="mt-3 block text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-stone-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-stone-700 hover:file:bg-stone-100"
           />
         </div>
       </Field>
@@ -132,7 +135,8 @@ export function ResourceUploadForm({
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
-          {RESOURCE_CATEGORIES.map((cat) => (
+          {!categories.includes(category) && <option value={category}>{category}</option>}
+          {categories.map((cat) => (
             <option key={cat} value={cat}>
               {cat}
             </option>

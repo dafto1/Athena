@@ -23,7 +23,7 @@ export default async function DashboardPage() {
     ]);
 
   const cards = [
-    { label: "Open tasks", value: pendingTasks, icon: ListTodo, tone: "bg-violet-100 text-violet-700" },
+    { label: "Open tasks", value: pendingTasks, icon: ListTodo, tone: "bg-stone-100 text-stone-700" },
     { label: "Tasks completed", value: completedTasks, icon: CheckCircle2, tone: "bg-emerald-100 text-emerald-700" },
     { label: "Focus sessions", value: sessions, icon: Clock3, tone: "bg-amber-100 text-amber-700" },
     { label: "Study resources", value: resourcesCount, icon: FolderOpen, tone: "bg-blue-100 text-blue-700" },
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
       </section>
 
       <Card>
-        <p className="text-sm font-semibold text-violet-700">NEXT UP</p>
+        <p className="text-sm font-semibold text-stone-700">NEXT UP</p>
         {nextTask ? (
           <>
             <h2 className="mt-2 text-xl font-bold text-slate-950">{nextTask.title}</h2>

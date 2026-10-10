@@ -29,7 +29,7 @@ export function SessionHistory({ refreshKey }: { refreshKey: number }) {
   }, [refreshKey]);
 
   return (
-    <section className="mt-10">
+    <section className="space-y-4">
       <h2 className="mb-4 text-base font-semibold text-slate-800">Session history</h2>
 
       {loading && (
@@ -50,7 +50,7 @@ export function SessionHistory({ refreshKey }: { refreshKey: number }) {
             <li key={s.id}>
               <Card className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 text-violet-500" />
+                  <Clock className="h-4 w-4 text-stone-500" />
                   <span className="text-sm font-medium text-slate-800">
                     {s.durationMin} min session
                   </span>

@@ -17,10 +17,8 @@ export function PageHeader({
 }) {
   return (
     <header>
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-violet-600">
-        {eyebrow}
-      </p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+      {eyebrow && <p className="text-sm font-medium text-[#787774]">{eyebrow}</p>}
+      <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[#37352f] sm:text-4xl">
         {title}
       </h1>
       {description && (
@@ -33,7 +31,7 @@ export function PageHeader({
 // ─── Form primitives ─────────────────────────────────────────────────────────
 
 const inputBase =
-  "w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100";
+  "w-full rounded-md border border-[#d9d8d3] bg-white px-3 py-2 text-sm outline-none transition focus:border-[#9b9a97] focus:ring-2 focus:ring-[#f1f0ed]";
 
 export function Label({
   children,
@@ -94,13 +92,13 @@ type ButtonSize = "sm" | "md";
 
 const variantClass: Record<ButtonVariant, string> = {
   primary:
-    "bg-violet-600 text-white shadow-sm hover:bg-violet-700 disabled:opacity-50",
+    "bg-[#37352f] text-white hover:bg-[#4a4842] disabled:opacity-50",
   secondary:
-    "border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50",
+    "border border-[#d9d8d3] bg-white text-[#37352f] hover:bg-[#f7f6f3] disabled:opacity-50",
   danger:
     "bg-rose-600 text-white shadow-sm hover:bg-rose-700 disabled:opacity-50",
   ghost:
-    "text-slate-500 hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50",
+    "text-[#5f5e5b] hover:bg-[#f1f0ed] hover:text-[#37352f] disabled:opacity-50",
 };
 
 const sizeClass: Record<ButtonSize, string> = {
@@ -119,11 +117,11 @@ function buttonClassName({
   size = "md",
   className,
 }: ButtonStyleProps) {
-  return `inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed ${variantClass[variant]} ${sizeClass[size]} ${className ?? ""}`;
+  return `inline-flex items-center justify-center gap-2 rounded-md font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed ${variantClass[variant]} ${sizeClass[size]} ${className ?? ""}`;
 }
 
 const iconGhostClass =
-  "rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded-md p-1.5 text-[#787774] hover:bg-[#f1f0ed] hover:text-[#37352f] transition disabled:cursor-not-allowed disabled:opacity-50";
 const iconDangerClass =
   "rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -193,7 +191,7 @@ export function IconButton({
   active?: boolean;
 }) {
   const cls = variant === "danger" ? iconDangerClass : iconGhostClass;
-  const activeCls = active ? "bg-violet-100 text-violet-700" : "";
+  const activeCls = active ? "bg-[#e9e8e4] text-[#37352f]" : "";
   return (
     <button
       {...props}
@@ -275,7 +273,7 @@ export function EmptyState({
   description?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-sm">
+    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center">
       <Icon className="mx-auto h-10 w-10 text-slate-300" />
       <p className="mt-3 text-base font-semibold text-slate-800">{title}</p>
       {description && (
@@ -296,7 +294,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-slate-200 bg-white p-6 shadow-sm ${className ?? ""}`}
+      className={`rounded-lg border border-slate-200 bg-white p-5 ${className ?? ""}`}
     >
       {children}
     </div>
@@ -316,7 +314,7 @@ export function Modal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+      <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-6 shadow-xl">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-slate-950">{title}</h3>
           <IconButton label="Close" onClick={onClose}>
@@ -335,7 +333,7 @@ type BadgeVariant = "slate" | "violet" | "amber" | "rose" | "emerald";
 
 const badgeVariants: Record<BadgeVariant, string> = {
   slate: "bg-slate-100 text-slate-700 border-slate-200",
-  violet: "bg-violet-100 text-violet-800 border-violet-200",
+  violet: "bg-stone-100 text-stone-800 border-stone-200",
   amber: "bg-amber-50 text-amber-800 border-amber-200",
   rose: "bg-rose-50 text-rose-800 border-rose-200",
   emerald: "bg-emerald-50 text-emerald-800 border-emerald-200",
@@ -350,7 +348,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badgeVariants[variant]}`}
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${badgeVariants[variant]}`}
     >
       {children}
     </span>

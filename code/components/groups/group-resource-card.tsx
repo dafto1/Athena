@@ -7,6 +7,8 @@ import {
   FileText,
   FileCode,
   FileImage,
+  FileSpreadsheet,
+  FileType2,
   Presentation,
   Download,
   Trash2,
@@ -22,6 +24,8 @@ function getFileIcon(type: string, name: string) {
   const ext = name.split(".").pop()?.toLowerCase();
   if (ext === "pdf" || type.includes("pdf")) return FileText;
   if (ext === "ppt" || ext === "pptx" || type.includes("presentation")) return Presentation;
+  if (ext === "xlsx" || ext === "xls" || ext === "csv" || type.includes("spreadsheet")) return FileSpreadsheet;
+  if (ext === "doc" || ext === "docx" || type.includes("word")) return FileType2;
   if (ext === "png" || ext === "jpg" || ext === "jpeg" || type.includes("image")) return FileImage;
   if (ext === "md" || ext === "txt") return FileCode;
   return FileText;
@@ -60,10 +64,10 @@ export function GroupResourceCard({
   }
 
   return (
-    <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-violet-200 hover:shadow-md">
+    <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-stone-200 hover:shadow-md">
       <div>
         <div className="flex items-start justify-between gap-2">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-50 text-stone-600">
             <Icon className="h-5 w-5" />
           </div>
           <div className="flex flex-wrap gap-1 justify-end">

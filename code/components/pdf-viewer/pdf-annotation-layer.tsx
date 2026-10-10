@@ -125,7 +125,7 @@ export function PdfAnnotationLayer({
             key={annotation.id}
             data-annotation
             className={`pointer-events-auto absolute rounded-sm border ${
-              selected ? "border-violet-600" : "border-amber-300"
+              selected ? "border-stone-600" : "border-amber-300"
             }`}
             style={{
               left: `${annotation.xPct}%`,

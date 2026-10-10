@@ -9,7 +9,7 @@ export default function RegisterPage() {
           <h2 className="text-center text-3xl font-bold text-slate-900">Create your account</h2>
           <p className="mt-2 text-center text-slate-600">
             Already have an account?{" "}
-            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/login" className="font-medium text-stone-700 hover:text-stone-900">
               Sign in
             </Link>
           </p>

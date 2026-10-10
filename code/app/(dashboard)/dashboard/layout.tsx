@@ -7,9 +7,9 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
   if (!user) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-slate-50 lg:flex">
+    <div className="min-h-screen bg-white lg:flex">
       <Sidebar />
-      <main className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-10">{children}</main>
+      <main className="min-w-0 flex-1 px-4 py-6 sm:px-10 sm:py-10">{children}</main>
     </div>
   );
 }

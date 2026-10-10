@@ -45,7 +45,7 @@ export function GroupListView() {
   return (
     <div className="space-y-6">
       {/* Top Action Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
           <Input
@@ -55,15 +55,12 @@ export function GroupListView() {
             className="pl-9"
           />
         </div>
-
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" onClick={() => setShowJoin(true)}>
-            <KeyRound className="h-4 w-4" />
-            Join with Code
+            <KeyRound className="h-4 w-4" /> Join with code
           </Button>
           <Button variant="primary" onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4" />
-            Create Study Group
+            <Plus className="h-4 w-4" /> Create study group
           </Button>
         </div>
       </div>
