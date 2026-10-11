@@ -9,7 +9,7 @@ export type UseTimerReturn = {
   totalSeconds: number;
   durationMin: number;
   setDurationMin: (min: number) => void;
-  start: () => void;
+  start: (durationMin?: number) => void;
   pause: () => void;
   reset: () => void;
   /** ISO string of when the session started, null if not started. */
@@ -57,7 +57,16 @@ export function useTimer(defaultDuration = 25): UseTimerReturn {
   }, [status]);
 
   // REQ-TIMER-002: Start
-  const start = useCallback(() => {
+  const start = useCallback((requestedDuration?: number) => {
+    if (requestedDuration !== undefined) {
+      if (!Number.isInteger(requestedDuration) || requestedDuration < MIN_DURATION_MIN || requestedDuration > MAX_DURATION_MIN) return;
+      setDurationMinState(requestedDuration);
+      setSecondsLeft(requestedDuration * 60);
+      setStartedAt(new Date().toISOString());
+      setStatus("running");
+      completionFired.current = false;
+      return;
+    }
     if (status === "completed" || secondsLeft === 0) return;
     if (!startedAt) setStartedAt(new Date().toISOString());
     setStatus("running");

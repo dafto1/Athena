@@ -20,6 +20,15 @@ export type CalendarSyncResult = {
   warnings: { provider: CalendarProvider; message: string }[];
 };
 
+export type CalendarEventInput = {
+  provider: CalendarProvider;
+  title: string;
+  start: string;
+  end: string;
+  description?: string | null;
+  location?: string | null;
+};
+
 type ProviderConnection = {
   id: string;
   provider: CalendarProvider;
@@ -31,8 +40,8 @@ type ProviderConnection = {
   userId: string;
 };
 
-const GOOGLE_SCOPES = "https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.calendarlist.readonly";
-const MS_SCOPES = "openid profile email offline_access User.Read Calendars.Read";
+const GOOGLE_SCOPES = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly";
+const MS_SCOPES = "openid profile email offline_access User.Read Calendars.ReadWrite";
 
 class CalendarProviderHttpError extends Error {
   /** Identifies a failed HTTP response from an external calendar API. */
@@ -486,6 +495,32 @@ export async function synchronizeCalendarEvents(userId: string, start: string, e
     active.delete(key);
     if (!active.size) activeSyncsByUser.delete(userId);
   }
+}
+
+/** Creates an event in the selected connected calendar after an explicit user confirmation. */
+export async function createCalendarEvent(userId: string, input: CalendarEventInput) {
+  const connection = await prisma.calendarConnection.findUnique({ where: { userId_provider: { userId, provider: input.provider } } }) as ProviderConnection | null;
+  if (!connection) throw new Error(`${calendarProviderName(input.provider)} is not connected.`);
+  const deadline = Date.now() + 15_000;
+  const token = await getValidAccessToken(connection, deadline);
+  const start = new Date(input.start);
+  const end = new Date(input.end);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) throw new Error("Choose a valid event start and end time.");
+  const url = input.provider === "GOOGLE"
+    ? "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+    : "https://graph.microsoft.com/v1.0/me/events";
+  const body = input.provider === "GOOGLE"
+    ? { summary: input.title, description: input.description ?? undefined, location: input.location ? { location: input.location } : undefined, start: { dateTime: start.toISOString() }, end: { dateTime: end.toISOString() } }
+    : { subject: input.title, body: input.description ? { contentType: "text", content: input.description } : undefined, location: input.location ? { displayName: input.location } : undefined, start: { dateTime: start.toISOString().replace("Z", ""), timeZone: "UTC" }, end: { dateTime: end.toISOString().replace("Z", ""), timeZone: "UTC" } };
+  const response = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(input.provider === "OUTLOOK" ? { Prefer: 'outlook.timezone="UTC"' } : {}) }, body: JSON.stringify(body), signal: AbortSignal.timeout(Math.max(1000, deadline - Date.now())) });
+  if (!response.ok) {
+    const detail = await response.json().catch(() => null);
+    if (response.status === 403) throw new Error("Calendar write access was not granted. Disconnect and reconnect this calendar, then approve the new permission.");
+    throw new Error(detail?.error?.message ?? `The calendar provider could not create the event (${response.status}).`);
+  }
+  const created = asRecord(await response.json());
+  invalidateCalendarSyncCache(userId);
+  return { id: stringField(created, "id") ?? "", title: input.title, provider: input.provider, start: start.toISOString(), end: end.toISOString() };
 }
 
 /** Invalidates cached event ranges after a user's provider connection changes. */

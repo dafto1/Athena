@@ -22,20 +22,20 @@ export function TimerControls({
   return (
     <div className="mt-7 flex justify-center gap-3">
       {/* REQ-TIMER-002 */}
-      <Button onClick={onStart} disabled={isRunning || isDone} variant="primary">
+      <Button type="button" onClick={() => onStart()} disabled={isRunning || isDone} variant="primary">
         {status === "paused" ? "Resume" : "Start"}
       </Button>
 
       {/* REQ-TIMER-003 */}
-      <Button onClick={onPause} disabled={!isRunning} variant="secondary">
+      <Button type="button" onClick={() => onPause()} disabled={!isRunning} variant="secondary">
         Pause
       </Button>
 
       {/* REQ-TIMER-004 */}
-      <Button onClick={onReset} variant="secondary">
+      <Button type="button" onClick={() => onReset()} variant="secondary">
         Reset
       </Button>
-      {(isRunning || status === "paused") && <Button onClick={onEnd} variant="danger">End session</Button>}
+      {(isRunning || status === "paused") && <Button type="button" onClick={() => onEnd()} variant="danger">End session</Button>}
     </div>
   );
 }

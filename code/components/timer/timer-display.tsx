@@ -47,6 +47,7 @@ export function TimerDisplay({
         />
       </svg>
       <p
+        data-testid="focus-timer-countdown"
         aria-live="polite"
         className="absolute text-5xl font-bold tabular-nums tracking-tight text-slate-950"
       >

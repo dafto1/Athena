@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Plus } from "lucide-react";
 
 import { Card, EmptyState, ErrorBanner, Modal } from "@/components/ui";
@@ -38,6 +39,9 @@ function applySort(tasks: Task[], sortBy: SortBy): Task[] {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function TaskBoard({ initialTasks }: { initialTasks: Task[] }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [error, setError] = useState("");
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -49,6 +53,19 @@ export function TaskBoard({ initialTasks }: { initialTasks: Task[] }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("ALL");
   const [sortBy, setSortBy] = useState<SortBy>("DUE_DATE");
+
+  useEffect(() => {
+    const taskId = searchParams.get("task");
+    if (!taskId) return;
+    const task = tasks.find((item) => item.id === taskId);
+    if (task) {
+      const timer = window.setTimeout(() => {
+        setEditingTask(task);
+        router.replace(pathname, { scroll: false });
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [pathname, router, searchParams, tasks]);
 
   // ── Handlers ──
 

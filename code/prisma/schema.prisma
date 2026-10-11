@@ -30,6 +30,7 @@ model User {
   groupMemberships StudyGroupMember[]
   sharedResources GroupResource[]
  calendarConnections CalendarConnection[]
+  nemoConversations NemoConversation[]
  }
 
 enum CalendarProvider {
@@ -52,6 +53,30 @@ model CalendarConnection {
 
   @@unique([userId, provider])
   @@index([userId])
+}
+
+model NemoConversation {
+  id        String        @id @default(cuid())
+  title     String        @default("New chat")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  NemoMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model NemoMessage {
+  id             String          @id @default(cuid())
+  role           String
+  content        String          @db.Text
+  action         Json?
+  createdAt      DateTime        @default(now())
+  conversationId String
+  conversation   NemoConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }
 
  model Task { 
@@ -86,6 +111,7 @@ model Resource {
   fileType String
   fileSize Int
   fileData Bytes
+  extractedText String? @db.Text
   category String @default("General")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

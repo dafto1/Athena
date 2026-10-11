@@ -6,6 +6,7 @@ import {
   MAX_FILE_SIZE_BYTES,
   SUPPORTED_FILE_TYPES,
 } from "@/components/resources/types";
+import { extractResourceText } from "@/lib/resource-text";
 
 // REQ-RES-004: Students can view their stored resources
 // REQ-RES-005: Students can organize resources using folders, categories
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
     // Read binary file into Buffer for direct storage in Neon PostgreSQL (bytea)
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const extractedText = await extractResourceText(file.name, file.type || fileExtension, buffer);
 
     const resource = await prisma.resource.create({
       data: {
@@ -116,6 +118,7 @@ export async function POST(request: Request) {
         fileType: file.type || fileExtension,
         fileSize: file.size,
         fileData: buffer, // Stored directly in Neon DB!
+        extractedText,
         category: categoryInput.trim().slice(0, 50) || "General",
         userId: user.id, // REQ-RES-003
       },

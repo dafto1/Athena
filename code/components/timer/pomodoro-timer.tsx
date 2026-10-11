@@ -69,10 +69,10 @@ export function PomodoroTimer() {
   const isLocked = status === "running" || status === "paused";
 
   return (
-    <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_1.4fr]">
+    <div data-testid="focus-timer" className="mt-8 grid gap-8 lg:grid-cols-[1fr_1.4fr]">
       {/* ── Timer card ── */}
       <Card className="flex flex-col items-center py-8">
-        <p className="text-sm font-semibold uppercase tracking-wider text-stone-600">
+        <p data-testid="focus-timer-status" aria-live="polite" className="text-sm font-semibold uppercase tracking-wider text-stone-600">
           {status === "idle" && "Ready"}
           {status === "running" && "Focusing…"}
           {status === "paused" && "Paused"}

@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LogOut,
   Timer,
+  Sparkles,
 } from "lucide-react";
 
 const links = [
@@ -21,6 +22,7 @@ const links = [
   { href: "/dashboard/timer", label: "Focus Timer", icon: Timer },
   { href: "/dashboard/resources", label: "Resources", iconSrc: "/figma/file.svg" },
   { href: "/dashboard/groups", label: "Study Groups", iconSrc: "/figma/groups.svg" },
+  { href: "/dashboard/nemo", label: "Nemo", icon: Sparkles },
 ];
 
 /** Renders the dashboard navigation for the authenticated user. */
@@ -30,7 +32,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`mx-3 mt-3 rounded-2xl border border-[#e9e8e4] bg-[#f7f6f3] text-[#37352f] shadow-sm lg:sticky lg:top-4 lg:mx-4 lg:mr-0 lg:flex lg:h-[calc(100vh-2rem)] lg:shrink-0 lg:flex-col lg:transition-[width] lg:duration-200 ${
+      className={`mx-3 mt-3 max-h-32 overflow-x-auto rounded-2xl border border-[#e9e8e4] bg-[#f7f6f3] text-[#37352f] shadow-sm lg:sticky lg:top-0 lg:mx-0 lg:mt-0 lg:flex lg:h-[100dvh] lg:max-h-none lg:shrink-0 lg:flex-col lg:overflow-visible lg:rounded-none lg:border-y-0 lg:border-l-0 lg:transition-[width] lg:duration-200 ${
         collapsed ? "lg:w-[4.5rem]" : "lg:w-60"
       }`}
     >
@@ -73,7 +75,7 @@ export function Sidebar() {
                   : "text-[#5f5e5b] hover:bg-[#eeedea] hover:text-[#37352f]"
               }`}
             >
-              {"iconSrc" in link ? (
+              {"iconSrc" in link && link.iconSrc ? (
                 <Image src={link.iconSrc} alt="" width={16} height={16} className="h-4 w-4 shrink-0 opacity-70" unoptimized />
               ) : Icon ? (
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />

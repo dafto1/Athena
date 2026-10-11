@@ -10,6 +10,25 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const start = params.get("start");
   const end = params.get("end");
+  const query = params.get("query")?.trim();
+  if (query) {
+    if (query.length < 2 || query.length > 120) return NextResponse.json({ events: [], errors: [], warnings: [] }, { headers: { "Cache-Control": "private, no-store" } });
+    try {
+      const rangeStart = new Date();
+      rangeStart.setMonth(rangeStart.getMonth() - 6);
+      const rangeEnd = new Date();
+      rangeEnd.setFullYear(rangeEnd.getFullYear() + 2);
+      const result = await synchronizeCalendarEvents(user.id, rangeStart.toISOString(), rangeEnd.toISOString());
+      const needle = query.toLocaleLowerCase();
+      const events = result.events.filter((event) =>
+        `${event.title} ${event.location ?? ""}`.toLocaleLowerCase().includes(needle)
+      ).slice(0, 6);
+      return NextResponse.json({ events, errors: result.errors, warnings: result.warnings }, { headers: { "Cache-Control": "private, no-store" } });
+    } catch (error) {
+      console.error("Calendar search could not complete:", error);
+      return NextResponse.json({ events: [], errors: [{ provider: null, message: error instanceof Error ? error.message : "Calendar search could not be completed." }], warnings: [] }, { headers: { "Cache-Control": "private, no-store" } });
+    }
+  }
   const startTime = start ? Date.parse(start) : Number.NaN;
   const endTime = end ? Date.parse(end) : Number.NaN;
   if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || startTime >= endTime || endTime - startTime > 62 * 24 * 60 * 60 * 1000) {

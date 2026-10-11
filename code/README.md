@@ -17,9 +17,28 @@ Set `NEXTAUTH_URL` to the public Athena origin. Register these exact callback UR
 - `${NEXTAUTH_URL}/api/calendar/callback/google`
 - `${NEXTAUTH_URL}/api/calendar/callback/outlook`
 
-Enable the Google Calendar API and request the read-only event and calendar-list scopes. For Microsoft, register a web redirect URI and grant delegated `Calendars.Read`, `User.Read`, `openid`, `profile`, `email`, and `offline_access` permissions. Generate the encryption key with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`; store it in the deployment secret manager and keep it stable so saved connections remain readable. OAuth tokens are encrypted before database storage.
+Enable the Google Calendar API and request the `https://www.googleapis.com/auth/calendar.events` and `https://www.googleapis.com/auth/calendar.calendarlist.readonly` scopes. For Microsoft, register a web redirect URI and grant delegated `Calendars.ReadWrite`, `User.Read`, `openid`, `profile`, `email`, and `offline_access` permissions. Users with existing connections must reconnect to grant the expanded scopes; changing the requested scopes does not expand permissions on already-issued tokens. Generate the encryption key with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`; store it in the deployment secret manager and keep it stable so saved connections remain readable. OAuth tokens are encrypted before database storage.
 
 Apply the calendar connection migration with `npx prisma migrate deploy` and regenerate the Prisma client with `npx prisma generate` after updating the schema.
+
+## Nemo setup
+
+Set `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` in the server environment. Use `nvidia/nemotron-3-ultra-550b-a55b` or another model identifier enabled for the OpenRouter account. Keep the key server-only. Create and apply the Nemo conversation migration with `npx prisma migrate dev --name nemo_conversations`, then regenerate Prisma Client with `npx prisma generate`.
+
+Nemo extracts text from new PDF, TXT, and Markdown uploads. After applying the resource text migration, run `npm run index:resource-text` once to index resources that already exist.
+
+## Selenium browser test
+
+Install dependencies with `npm install`, start Athena with `npm run dev`, then run the browser smoke test from a second terminal. Use a test account because the test signs in to Athena.
+
+```powershell
+$env:SELENIUM_EMAIL = "test-account@example.com"
+$env:SELENIUM_PASSWORD = "your-test-password"
+$env:SELENIUM_HEADLESS = "1" # Optional: run Chrome without a visible window
+npm run test:e2e
+```
+
+The test defaults to `http://localhost:3000`; set `SELENIUM_BASE_URL` to test another running instance. It signs in, opens Nemo, and checks that the in-chat Pomodoro timer can start, pause, and reset. The timer is reset before it completes, so this smoke test does not create a focus-session record. Selenium Manager obtains the matching browser driver when needed.
 
 ## Getting Started
 
