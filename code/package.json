@@ -7,6 +7,7 @@
     "build": "node scripts/copy-pdf-assets.cjs && next build",
     "start": "next start",
     "lint": "eslint",
+    "test:unit": "node --experimental-strip-types --test tests/unit/validation.test.mjs",
     "test:e2e": "node --test selenium/nemo.test.mjs",
     "index:resource-text": "tsx scripts/index-resource-text.ts",
     "postinstall": "node scripts/copy-pdf-assets.cjs"
@@ -18,6 +19,7 @@
     "@tanstack/react-query": "^5.101.4",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
+    "jszip": "^3.10.2",
     "lucide-react": "^1.33.0",
     "next": "16.3.2",
     "next-auth": "^4.24.15",
@@ -39,6 +41,7 @@
     "eslint-config-next": "16.3.2",
     "selenium-webdriver": "^4.51.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

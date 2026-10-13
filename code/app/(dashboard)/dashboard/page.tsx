@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { CheckCircle2, Clock3, FolderOpen, ListTodo, Users } from "lucide-react";
 import { Card, PageHeader } from "@/components/ui";
+import { format } from "date-fns";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -53,9 +54,9 @@ export default async function DashboardPage() {
         {nextTask ? (
           <>
             <h2 className="mt-2 text-xl font-bold text-slate-950">{nextTask.title}</h2>
-            <p className="mt-1 text-sm text-slate-600">
+            <p suppressHydrationWarning className="mt-1 text-sm text-slate-600">
               {nextTask.dueDate
-                ? `Due ${nextTask.dueDate.toLocaleDateString()}`
+                ? `Due ${format(nextTask.dueDate, "MMM d, yyyy")}`
                 : "No due date"}{" "}
               · {nextTask.priority.toLowerCase()} priority
             </p>

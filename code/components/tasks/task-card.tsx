@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar, CheckCircle2, Circle, Edit2, Trash2 } from "lucide-react";
+import { format } from "date-fns";
 import { IconButton } from "@/components/ui";
 import { PriorityBadge } from "@/components/tasks/task-form";
 import type { Task } from "@/components/tasks/types";
@@ -20,11 +21,22 @@ function isOverdue(task: Task) {
   );
 }
 
+function formatDueDate(dueDate: string) {
+  try {
+    const d = new Date(dueDate);
+    if (isNaN(d.getTime())) return "";
+    return format(d, "MMM d, yyyy");
+  } catch {
+    return "";
+  }
+}
+
 export function TaskCard({ task, onToggle, onEdit, onDelete }: TaskCardProps) {
   const overdue = isOverdue(task);
 
   return (
     <article
+      suppressHydrationWarning
       className={`group relative flex items-start gap-4 rounded-2xl border bg-white p-5 shadow-sm transition hover:border-slate-300 ${
         task.completed
           ? "border-slate-200 bg-slate-50/70 opacity-75"
@@ -58,7 +70,10 @@ export function TaskCard({ task, onToggle, onEdit, onDelete }: TaskCardProps) {
             {task.title}
           </h3>
           {overdue && (
-            <span className="rounded-md bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700">
+            <span
+              suppressHydrationWarning
+              className="rounded-md bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700"
+            >
               Overdue
             </span>
           )}
@@ -78,6 +93,7 @@ export function TaskCard({ task, onToggle, onEdit, onDelete }: TaskCardProps) {
           <PriorityBadge priority={task.priority} />
           {task.dueDate && (
             <span
+              suppressHydrationWarning
               className={`flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-medium ${
                 overdue
                   ? "border-rose-200 bg-rose-50 text-rose-700"
@@ -85,7 +101,7 @@ export function TaskCard({ task, onToggle, onEdit, onDelete }: TaskCardProps) {
               }`}
             >
               <Calendar className="h-3 w-3" />
-              Due {new Date(task.dueDate).toLocaleDateString()}
+              Due {formatDueDate(task.dueDate)}
             </span>
           )}
         </div>

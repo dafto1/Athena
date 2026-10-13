@@ -17,6 +17,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { isPdfFile } from "@/lib/files";
+import { format } from "date-fns";
 import { formatBytes, type Resource } from "./types";
 
 function getFileIcon(type: string, name: string) {
@@ -59,11 +60,12 @@ export function ResourceCard({
     }
   }
 
-  const formattedDate = new Date(resource.createdAt).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  let formattedDate = "";
+  try {
+    formattedDate = format(new Date(resource.createdAt), "MMM d, yyyy");
+  } catch {
+    formattedDate = "";
+  }
 
   return (
     <div className="group relative flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:bg-[#fbfbfa]">
@@ -92,7 +94,7 @@ export function ResourceCard({
       <div className="mt-5 border-t border-slate-100 pt-3.5 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <Calendar className="h-3.5 w-3.5" />
-          <span>{formattedDate}</span>
+          <span suppressHydrationWarning>{formattedDate}</span>
           <span>•</span>
           <span>{formatBytes(resource.fileSize)}</span>
         </div>
