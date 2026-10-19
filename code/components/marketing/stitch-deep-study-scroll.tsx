@@ -327,7 +327,7 @@ export function StitchDeepStudyScroll() {
               if (p < 0.10) {
                 counterCurrent.textContent = "00";
               } else {
-                const currentIdx = Math.min(6, Math.floor(((p - 0.10) / 0.90) * 6) + 1);
+                const currentIdx = Math.min(features.length, Math.floor(((p - 0.10) / 0.90) * features.length) + 1);
                 counterCurrent.textContent = `0${currentIdx}`;
               }
             }

@@ -50,7 +50,7 @@ export function NemoWorkspace() {
   async function submit(event?: FormEvent, preset?: string) {
     event?.preventDefault(); const text = (preset ?? input).trim(); if (!text || pending) return;
     setMessages((items) => [...items, { role: "user", text }]); setInput(""); setPending(true);
-    try { const response = await fetch("/api/nemo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) }); const body = await response.json(); if (!response.ok) throw new Error(body.message ?? "Nemo could not respond."); setMessages((items) => [...items, { role: "nemo", text: body.answer, activities: body.activities }]); if (body.timerMinutes) window.dispatchEvent(new CustomEvent("nemo:start-focus", { detail: body.timerMinutes })); }
+    try { const response = await fetch("/api/nemo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, history: messages.map(({ role, text: turn }) => ({ role, text: turn })) }) }); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.message ?? "Nemo could not respond."); setMessages((items) => [...items, { role: "nemo", text: body.answer, activities: body.activities }]); if (body.timerMinutes) window.dispatchEvent(new CustomEvent("nemo:start-focus", { detail: body.timerMinutes })); }
     catch (error) { setMessages((items) => [...items, { role: "nemo", text: error instanceof Error ? error.message : "Nemo could not respond. Please try again." }]); }
     finally { setPending(false); }
   }

@@ -1,5 +1,5 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
-import { BaseMessage, HumanMessage, SystemMessage, ToolMessage } from "@langchain/core/messages";
+import { AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage } from "@langchain/core/messages";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatOpenAI } from "@langchain/openai";
 import { z } from "zod";
@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { createCalendarEvent, type CalendarProvider } from "@/lib/calendar";
 
 type AgentResult = { answer: string; activities: { tool: string; detail: string }[]; timerMinutes?: number };
+type ConversationTurn = { role: "user" | "nemo"; text: string };
+const pendingDeletes = new Map<string, { taskId: string; title: string; expiresAt: number }>();
 
 const today = () => new Date().toISOString();
 const safeJson = (value: unknown) => JSON.stringify(value, null, 2);
@@ -24,7 +26,7 @@ function model() {
 }
 
 /** Runs Nemo with per-user tools; no resource data is ever shared across users. */
-export async function runNemo(userId: string, message: string): Promise<AgentResult> {
+export async function runNemo(userId: string, message: string, history: ConversationTurn[] = []): Promise<AgentResult> {
   const activities: AgentResult["activities"] = [];
   let timerMinutes: number | undefined;
   const tools = [
@@ -49,8 +51,16 @@ export async function runNemo(userId: string, message: string): Promise<AgentRes
       const task = await prisma.task.findFirst({ where: { id, userId } }); if (!task) return "Task not found.";
       const updated = await prisma.task.update({ where: { id }, data: { ...input, dueDate: dueDate === undefined ? undefined : dueDate ? new Date(dueDate) : null, completed, completedAt: completed ? new Date() : completed === false ? null : undefined } }); activities.push({ tool: "Task updated", detail: updated.title }); return safeJson({ id: updated.id, title: updated.title });
     }}),
-    new DynamicStructuredTool({ name: "delete_task", description: "Delete a task only when the user explicitly asks to delete it. Always use list_tasks first when the ID is unknown.", schema: z.object({ id: z.string() }), func: async ({ id }) => {
-      const task = await prisma.task.findFirst({ where: { id, userId } }); if (!task) return "Task not found."; await prisma.task.delete({ where: { id } }); activities.push({ tool: "Task deleted", detail: task.title }); return `Deleted ${task.title}.`;
+    new DynamicStructuredTool({ name: "delete_task", description: "Request deletion of a task. Deletion requires the user to explicitly confirm after being shown the task title. Always use list_tasks first when the ID is unknown.", schema: z.object({ id: z.string() }), func: async ({ id }) => {
+      let pending = pendingDeletes.get(userId);
+      const userConfirmed = /^(?:yes|confirm|delete it|go ahead|proceed)\b/i.test(message.trim());
+      if (pending && pending.expiresAt <= Date.now()) { pendingDeletes.delete(userId); pending = undefined; }
+      if (pending?.taskId === id && userConfirmed) {
+        await prisma.task.delete({ where: { id } }); pendingDeletes.delete(userId); activities.push({ tool: "Task deleted", detail: pending.title }); return `Deleted ${pending.title}.`;
+      }
+      const task = await prisma.task.findFirst({ where: { id, userId } }); if (!task) return "Task not found.";
+      pendingDeletes.set(userId, { taskId: id, title: task.title, expiresAt: Date.now() + 5 * 60_000 });
+      return `Confirmation required: ask the user to reply “Yes, delete ${task.title}” before trying again.`;
     }}),
     new DynamicStructuredTool({ name: "create_calendar_event", description: "Create a calendar event only when the user explicitly asks. Dates must be complete ISO timestamps.", schema: z.object({ provider: z.enum(["GOOGLE", "OUTLOOK"]), title: z.string().min(1).max(160), start: z.string().datetime(), end: z.string().datetime(), description: z.string().max(4000).optional(), location: z.string().max(300).optional() }), func: async (input) => {
       try { const event = await createCalendarEvent(userId, input as { provider: CalendarProvider; title: string; start: string; end: string; description?: string; location?: string }); activities.push({ tool: "Calendar event created", detail: event.title }); return safeJson(event); } catch (error) { return `Could not create event: ${error instanceof Error ? error.message : "unknown error"}`; }
@@ -59,7 +69,7 @@ export async function runNemo(userId: string, message: string): Promise<AgentRes
   ];
   const llm = model();
   if (!llm) return { answer: "Nemo needs an AI provider key before it can think. Add GOOGLE_API_KEY for Google AI Studio or OPENROUTER_API_KEY for OpenRouter, then try again.", activities };
-  const messages: BaseMessage[] = [new SystemMessage(`You are Nemo, Athena's concise study agent. Today is ${today()}. Use tools for all user data and actions; never invent tool results. Explain resource answers with document names. For calendar events, require an explicit request and complete date/time details. If key details are missing, ask one focused follow-up. Keep answers under 160 words. Format for scanning: use short paragraphs, Markdown **labels** for metadata, and a proper newline-separated numbered or bulleted list for choices. Never place Markdown list items in the middle of a sentence.`), new HumanMessage(message)];
+  const messages: BaseMessage[] = [new SystemMessage(`You are Nemo, Athena's concise study agent. Today is ${today()}. Use tools for all user data and actions; never invent tool results. Explain resource answers with document names. For calendar events, require an explicit request and complete date/time details. If key details are missing, ask one focused follow-up. Keep answers under 160 words. Format for scanning: use short paragraphs, Markdown **labels** for metadata, and a proper newline-separated numbered or bulleted list for choices. Never place Markdown list items in the middle of a sentence.`), ...history.map((turn) => turn.role === "user" ? new HumanMessage(turn.text) : new AIMessage(turn.text)), new HumanMessage(message)];
   const agent = llm.bindTools(tools);
   for (let round = 0; round < 5; round += 1) {
     const reply = await agent.invoke(messages);
@@ -67,7 +77,11 @@ export async function runNemo(userId: string, message: string): Promise<AgentRes
     if (!reply.tool_calls?.length) return { answer: typeof reply.content === "string" ? reply.content : "Done.", activities, timerMinutes };
     for (const call of reply.tool_calls) {
       const tool = tools.find((item) => item.name === call.name);
-      const result = tool ? await (tool as unknown as { invoke: (input: unknown) => Promise<unknown> }).invoke(call) : "Unknown tool.";
+      let result: unknown = "Unknown tool.";
+      if (tool) {
+        try { result = await (tool as unknown as { invoke: (input: unknown) => Promise<unknown> }).invoke(call); }
+        catch (error) { console.error(`Nemo tool ${call.name} failed:`, error); result = "This tool could not complete its action. Explain the limitation and offer a safe next step."; }
+      }
       messages.push(new ToolMessage({ content: typeof result === "string" ? result : safeJson(result), tool_call_id: call.id! }));
     }
   }

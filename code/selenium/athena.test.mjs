@@ -132,6 +132,19 @@ describe("Athena browser tests", { skip: missingCredentials ? "Set SELENIUM_EMAI
     await driver.findElement(By.xpath("//button[normalize-space()='Cancel']")).click();
   });
 
+  test("Nemo starts the floating focus timer", async () => {
+    await openPage("/dashboard/nemo", "Nemo");
+    await driver.executeScript(`
+      const originalFetch = window.fetch;
+      window.fetch = (...args) => args[0] === "/api/nemo"
+        ? Promise.resolve(new Response(JSON.stringify({ answer: "Starting a 25 minute focus timer.", activities: [], timerMinutes: 25 }), { status: 200, headers: { "Content-Type": "application/json" } }))
+        : originalFetch(...args);
+    `);
+    await driver.findElement(By.xpath("//button[normalize-space()='Start a focus sprint']")).click();
+    const timer = await driver.wait(until.elementLocated(By.css('[aria-label="Floating focus timer"]')), 5_000, "Nemo did not open the floating focus timer.");
+    await driver.wait(until.elementTextContains(timer, "25:"), 2_000);
+  });
+
   test("Focus Timer starts, pauses, resumes, and resets", async () => {
     await openPage("/dashboard/timer", "Focus Timer");
     const timer = await driver.findElement(By.css('[data-testid="focus-timer"]'));
