@@ -11,7 +11,6 @@ import {
   FileText,
   Users,
   CalendarDays,
-  Sparkles,
   Check,
   Flame,
   Search,
@@ -84,16 +83,6 @@ const features: FeatureItem[] = [
       "Connect Google Calendar or Outlook. See academic events alongside your tasks and deadlines.",
     color: "#5b8dd9",
     icon: CalendarDays,
-  },
-  {
-    id: "nemo-ai",
-    number: "06",
-    title: "Nemo AI",
-    tagline: "Your AI study companion.",
-    description:
-      "Ask questions, get explanations, generate summaries. An AI tutor that understands your context.",
-    color: "#d4689c",
-    icon: Sparkles,
   },
 ];
 
@@ -496,33 +485,6 @@ export function FeaturesHorizontal({ className = "" }: FeaturesHorizontalProps) 
                     </div>
                   )}
 
-                  {/* Card 6: Nemo AI */}
-                  {feature.id === "nemo-ai" && (
-                    <div className="bg-[#faf9f6] dark:bg-[#262624] rounded-lg p-3 border border-[#eceae4] dark:border-[#333330] space-y-2 text-xs">
-                      <div className="flex justify-end">
-                        <div className="bg-[#eae8e2] dark:bg-[#333330] text-[#292825] dark:text-[#f5f4f0] text-[10px] py-1 px-2.5 rounded-full max-w-[85%] truncate">
-                          Explain Dijkstra's shortest path simply
-                        </div>
-                      </div>
-
-                      <div className="bg-white/90 dark:bg-[#1f1f1d]/90 p-2 rounded-lg border border-[#eae8e2] dark:border-[#333330] space-y-1">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#d4689c]">
-                          <Sparkles className="w-3 h-3" />
-                          <span>Nemo AI Tutor</span>
-                          <span className="ml-auto text-[8px] bg-[#d4689c]/10 text-[#d4689c] px-1 rounded font-mono">
-                            Context Aware
-                          </span>
-                        </div>
-                        <p className="text-[10px] leading-relaxed text-[#5f5e5b] dark:text-[#c4c2be]">
-                          Like ripples in a pond: always visit the closest unvisited node first to guarantee optimal paths.
-                        </p>
-                        <div className="pt-1 border-t border-[#f0efeb] dark:border-[#333330] flex items-center justify-between text-[9px] text-[#8a8880] font-mono">
-                          <span>📖 Lecture 6, Slide 18</span>
-                          <span className="text-[#d4689c] font-semibold">Ask follow-up →</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             );

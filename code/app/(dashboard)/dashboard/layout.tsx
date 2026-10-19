@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { GlobalSearch } from "@/components/layout/global-search";
+import { FloatingFocusTimer } from "@/components/timer/floating-focus-timer";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -15,6 +16,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
           <div className="ml-auto w-full max-w-lg"><GlobalSearch /></div>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto"><div className="h-full min-h-full pt-8">{children}</div></div>
+        <FloatingFocusTimer />
       </main>
     </div>
   );

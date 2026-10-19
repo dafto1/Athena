@@ -37,12 +37,6 @@ export function StitchHeader() {
             How it works
           </a>
           <a
-            href="#nemo-ai"
-            className="text-sm text-[#77756F] hover:text-[#292825] transition-colors font-medium"
-          >
-            Nemo AI
-          </a>
-          <a
             href="#study-groups"
             className="text-sm text-[#77756F] hover:text-[#292825] transition-colors font-medium"
           >
