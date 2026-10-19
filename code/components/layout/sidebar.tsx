@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CalendarDays,
   ChevronLeft,
@@ -13,6 +13,8 @@ import {
   LogOut,
   Timer,
   Sparkles,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 const links = [
@@ -29,6 +31,22 @@ const links = [
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const enabled = localStorage.getItem("athena-theme") === "dark";
+    document.documentElement.classList.toggle("dark", enabled);
+    setDarkMode(enabled);
+  }, []);
+
+  function toggleTheme() {
+    setDarkMode((enabled) => {
+      const next = !enabled;
+      document.documentElement.classList.toggle("dark", next);
+      localStorage.setItem("athena-theme", next ? "dark" : "light");
+      return next;
+    });
+  }
 
   return (
     <aside
@@ -91,12 +109,22 @@ export function Sidebar() {
         onClick={() => signOut({ callbackUrl: "/" })}
         aria-label="Log out"
         title={collapsed ? "Log out" : undefined}
-        className={`m-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#5f5e5b] transition hover:bg-[#eeedea] hover:text-[#37352f] lg:mt-auto ${
+        className={`m-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#5f5e5b] transition hover:bg-[#eeedea] hover:text-[#37352f] ${
           collapsed ? "lg:justify-center lg:px-2" : ""
         }`}
       >
         <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span className={collapsed ? "lg:hidden" : ""}>Log out</span>
+      </button>
+      <button
+        type="button"
+        onClick={toggleTheme}
+        aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+        title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+        className={`m-3 mt-auto flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#5f5e5b] transition hover:bg-[#eeedea] hover:text-[#37352f] lg:mt-0 ${collapsed ? "lg:justify-center lg:px-2" : ""}`}
+      >
+        {darkMode ? <Sun className="h-4 w-4 shrink-0" aria-hidden="true" /> : <Moon className="h-4 w-4 shrink-0" aria-hidden="true" />}
+        <span className={collapsed ? "lg:hidden" : ""}>{darkMode ? "Light mode" : "Dark mode"}</span>
       </button>
     </aside>
   );

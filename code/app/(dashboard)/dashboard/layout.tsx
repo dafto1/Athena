@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
           <div className="hidden min-w-0 text-sm font-semibold text-[#37352f] sm:block">Athena <span className="font-normal text-[#9b9a97]">/ Workspace</span></div>
           <div className="ml-auto w-full max-w-lg"><GlobalSearch /></div>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto"><div className="h-full min-h-full">{children}</div></div>
+        <div className="min-h-0 flex-1 overflow-y-auto"><div className="h-full min-h-full pt-8">{children}</div></div>
       </main>
     </div>
   );

@@ -19,14 +19,18 @@ function databaseConnectionString(value: string | undefined) {
   return url.toString();
 }
 
-// Neon connection configuration with keepAlive & error handlers
+// Retire pooled connections regularly because Neon may close idle connections
+// while its compute suspends. TCP keepalive also helps detect stale sockets.
 const pool =
   globalForPrisma.pool ??
   new Pool({
     connectionString: databaseConnectionString(process.env.DATABASE_URL),
     max: 10,
-    idleTimeoutMillis: 30000,
+    idleTimeoutMillis: 10000,
+    maxLifetimeSeconds: 300,
     connectionTimeoutMillis: 10000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
   });
 
 // Handle unexpected errors on idle pool clients so they don't crash or hang the server
