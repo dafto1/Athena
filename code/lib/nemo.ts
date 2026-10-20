@@ -8,6 +8,7 @@ import { createCalendarEvent, type CalendarProvider } from "@/lib/calendar";
 
 type AgentResult = { answer: string; activities: { tool: string; detail: string }[]; timerMinutes?: number };
 type ConversationTurn = { role: "user" | "nemo"; text: string };
+type NemoContext = { resourceId?: string; resourceTitle?: string };
 const pendingDeletes = new Map<string, { taskId: string; title: string; expiresAt: number }>();
 
 const today = () => new Date().toISOString();
@@ -26,50 +27,168 @@ function model() {
 }
 
 /** Runs Nemo with per-user tools; no resource data is ever shared across users. */
-export async function runNemo(userId: string, message: string, history: ConversationTurn[] = []): Promise<AgentResult> {
+export async function runNemo(userId: string, message: string, history: ConversationTurn[] = [], context: NemoContext = {}): Promise<AgentResult> {
   const activities: AgentResult["activities"] = [];
   let timerMinutes: number | undefined;
   const tools = [
-    new DynamicStructuredTool({ name: "search_resources", description: "Search the user's uploaded study documents. Use this before answering questions about their material.", schema: z.object({ query: z.string().min(2).max(300) }), func: async ({ query }) => {
-      const resources = await prisma.resource.findMany({ where: { userId, extractedText: { not: null } }, select: { id: true, title: true, fileName: true, extractedText: true }, take: 40 });
-      const matches = resources.map((resource) => ({ ...resource, score: rankText(query, `${resource.title} ${resource.extractedText ?? ""}`) })).filter((resource) => resource.score > 0).sort((a, b) => b.score - a.score).slice(0, 4).map(({ id, title, fileName, extractedText }) => {
-        const text = extractedText ?? ""; const needle = query.split(/\s+/).find((word) => word.length > 2) ?? "";
-        const at = Math.max(0, text.toLowerCase().indexOf(needle.toLowerCase()));
-        return { id, title, fileName, excerpt: text.slice(Math.max(0, at - 250), at + 850) };
-      });
-      activities.push({ tool: "Resources searched", detail: matches.length ? `${matches.length} relevant document${matches.length === 1 ? "" : "s"} found` : "No matching indexed documents" });
-      return safeJson(matches);
-    }}),
-    new DynamicStructuredTool({ name: "list_tasks", description: "List the user's tasks when needed to identify a task before changing it.", schema: z.object({ includeCompleted: z.boolean().default(false) }), func: async ({ includeCompleted }) => {
-      const tasks = await prisma.task.findMany({ where: { userId, ...(includeCompleted ? {} : { completed: false }) }, select: { id: true, title: true, description: true, dueDate: true, priority: true, completed: true }, orderBy: { createdAt: "desc" }, take: 50 });
-      activities.push({ tool: "Tasks checked", detail: `${tasks.length} task${tasks.length === 1 ? "" : "s"} available` }); return safeJson(tasks);
-    }}),
-    new DynamicStructuredTool({ name: "create_task", description: "Create a task when the user asks to add a todo.", schema: z.object({ title: z.string().min(1).max(120), description: z.string().max(1000).optional(), dueDate: z.string().datetime().optional(), priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM") }), func: async (input) => {
-      const task = await prisma.task.create({ data: { ...input, description: input.description ?? null, dueDate: input.dueDate ? new Date(input.dueDate) : null, userId } }); activities.push({ tool: "Task created", detail: task.title }); return safeJson({ id: task.id, title: task.title });
-    }}),
-    new DynamicStructuredTool({ name: "update_task", description: "Update, complete, or rename a task. Always use list_tasks first when the ID is unknown.", schema: z.object({ id: z.string(), title: z.string().min(1).max(120).optional(), description: z.string().max(1000).nullable().optional(), dueDate: z.string().datetime().nullable().optional(), priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(), completed: z.boolean().optional() }), func: async ({ id, dueDate, completed, ...input }) => {
-      const task = await prisma.task.findFirst({ where: { id, userId } }); if (!task) return "Task not found.";
-      const updated = await prisma.task.update({ where: { id }, data: { ...input, dueDate: dueDate === undefined ? undefined : dueDate ? new Date(dueDate) : null, completed, completedAt: completed ? new Date() : completed === false ? null : undefined } }); activities.push({ tool: "Task updated", detail: updated.title }); return safeJson({ id: updated.id, title: updated.title });
-    }}),
-    new DynamicStructuredTool({ name: "delete_task", description: "Request deletion of a task. Deletion requires the user to explicitly confirm after being shown the task title. Always use list_tasks first when the ID is unknown.", schema: z.object({ id: z.string() }), func: async ({ id }) => {
-      let pending = pendingDeletes.get(userId);
-      const userConfirmed = /^(?:yes|confirm|delete it|go ahead|proceed)\b/i.test(message.trim());
-      if (pending && pending.expiresAt <= Date.now()) { pendingDeletes.delete(userId); pending = undefined; }
-      if (pending?.taskId === id && userConfirmed) {
-        await prisma.task.delete({ where: { id } }); pendingDeletes.delete(userId); activities.push({ tool: "Task deleted", detail: pending.title }); return `Deleted ${pending.title}.`;
-      }
-      const task = await prisma.task.findFirst({ where: { id, userId } }); if (!task) return "Task not found.";
-      pendingDeletes.set(userId, { taskId: id, title: task.title, expiresAt: Date.now() + 5 * 60_000 });
-      return `Confirmation required: ask the user to reply “Yes, delete ${task.title}” before trying again.`;
-    }}),
-    new DynamicStructuredTool({ name: "create_calendar_event", description: "Create a calendar event only when the user explicitly asks. Dates must be complete ISO timestamps.", schema: z.object({ provider: z.enum(["GOOGLE", "OUTLOOK"]), title: z.string().min(1).max(160), start: z.string().datetime(), end: z.string().datetime(), description: z.string().max(4000).optional(), location: z.string().max(300).optional() }), func: async (input) => {
-      try { const event = await createCalendarEvent(userId, input as { provider: CalendarProvider; title: string; start: string; end: string; description?: string; location?: string }); activities.push({ tool: "Calendar event created", detail: event.title }); return safeJson(event); } catch (error) { return `Could not create event: ${error instanceof Error ? error.message : "unknown error"}`; }
-    }}),
-    new DynamicStructuredTool({ name: "start_focus_timer", description: "Start the floating focus timer when the user asks to focus for a number of minutes.", schema: z.object({ minutes: z.number().int().min(1).max(180) }), func: async ({ minutes }) => { timerMinutes = minutes; activities.push({ tool: "Focus timer started", detail: `${minutes} minutes` }); return `Started a ${minutes}-minute focus timer.`; } }),
+    new DynamicStructuredTool({
+      name: "search_resources",
+      description: "Search or inspect the user's uploaded study documents. Provide search keywords, or '*' / empty string to browse available documents.",
+      schema: z.object({ query: z.string().max(300).optional().default("") }),
+      func: async ({ query = "" }) => {
+        const trimmed = (query ?? "").trim();
+        const isBroad = !trimmed || trimmed === "*" || trimmed.length < 2;
+        const resources = await prisma.resource.findMany({
+          where: { userId, ...(context.resourceId ? { id: context.resourceId } : {}), extractedText: { not: null } },
+          select: { id: true, title: true, fileName: true, extractedText: true },
+          take: 40,
+        });
+        const matches = resources
+          .map((resource) => ({
+            ...resource,
+            score: isBroad ? 1 : rankText(trimmed, `${resource.title} ${resource.extractedText ?? ""}`),
+          }))
+          .filter((resource) => isBroad || resource.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 4)
+          .map(({ id, title, fileName, extractedText }) => {
+            const text = extractedText ?? "";
+            const needle = !isBroad ? (trimmed.split(/\s+/).find((word) => word.length > 2) ?? "") : "";
+            const at = needle ? Math.max(0, text.toLowerCase().indexOf(needle.toLowerCase())) : 0;
+            return { id, title, fileName, excerpt: text.slice(Math.max(0, at - 250), at + 850) };
+          });
+        activities.push({
+          tool: "Resources searched",
+          detail: matches.length ? `${matches.length} relevant document${matches.length === 1 ? "" : "s"} found` : "No matching indexed documents",
+        });
+        return safeJson(matches);
+      },
+    }),
+    new DynamicStructuredTool({
+      name: "list_tasks",
+      description: "List the user's tasks when needed to identify a task before changing it.",
+      schema: z.object({ includeCompleted: z.boolean().optional().default(false) }),
+      func: async ({ includeCompleted = false }) => {
+        const tasks = await prisma.task.findMany({
+          where: { userId, ...(includeCompleted ? {} : { completed: false }) },
+          select: { id: true, title: true, description: true, dueDate: true, priority: true, completed: true },
+          orderBy: { createdAt: "desc" },
+          take: 50,
+        });
+        activities.push({ tool: "Tasks checked", detail: `${tasks.length} task${tasks.length === 1 ? "" : "s"} available` });
+        return safeJson(tasks);
+      },
+    }),
+    new DynamicStructuredTool({
+      name: "create_task",
+      description: "Create a task when the user asks to add a todo.",
+      schema: z.object({
+        title: z.string().min(1).max(120),
+        description: z.string().max(1000).optional(),
+        dueDate: z.string().datetime({ offset: true }).optional(),
+        priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+      }),
+      func: async (input) => {
+        const task = await prisma.task.create({
+          data: { ...input, description: input.description ?? null, dueDate: input.dueDate ? new Date(input.dueDate) : null, userId },
+        });
+        activities.push({ tool: "Task created", detail: task.title });
+        return safeJson({ id: task.id, title: task.title });
+      },
+    }),
+    new DynamicStructuredTool({
+      name: "update_task",
+      description: "Update, complete, or rename a task. Always use list_tasks first when the ID is unknown.",
+      schema: z.object({
+        id: z.string(),
+        title: z.string().min(1).max(120).optional(),
+        description: z.string().max(1000).nullable().optional(),
+        dueDate: z.string().datetime({ offset: true }).nullable().optional(),
+        priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
+        completed: z.boolean().optional(),
+      }),
+      func: async ({ id, dueDate, completed, ...input }) => {
+        const task = await prisma.task.findFirst({ where: { id, userId } });
+        if (!task) return "Task not found.";
+        const updated = await prisma.task.update({
+          where: { id },
+          data: {
+            ...input,
+            dueDate: dueDate === undefined ? undefined : dueDate ? new Date(dueDate) : null,
+            completed,
+            completedAt: completed ? new Date() : completed === false ? null : undefined,
+          },
+        });
+        activities.push({ tool: "Task updated", detail: updated.title });
+        return safeJson({ id: updated.id, title: updated.title });
+      },
+    }),
+    new DynamicStructuredTool({
+      name: "delete_task",
+      description: "Request deletion of a task. Deletion requires the user to explicitly confirm after being shown the task title. Always use list_tasks first when the ID is unknown.",
+      schema: z.object({ id: z.string() }),
+      func: async ({ id }) => {
+        let pending = pendingDeletes.get(userId);
+        const userConfirmed = /^(?:yes|confirm|delete it|go ahead|proceed)\b/i.test(message.trim());
+        if (pending && pending.expiresAt <= Date.now()) {
+          pendingDeletes.delete(userId);
+          pending = undefined;
+        }
+        if (pending?.taskId === id && userConfirmed) {
+          await prisma.task.delete({ where: { id } });
+          pendingDeletes.delete(userId);
+          activities.push({ tool: "Task deleted", detail: pending.title });
+          return `Deleted ${pending.title}.`;
+        }
+        const task = await prisma.task.findFirst({ where: { id, userId } });
+        if (!task) return "Task not found.";
+        pendingDeletes.set(userId, { taskId: id, title: task.title, expiresAt: Date.now() + 5 * 60_000 });
+        return `Confirmation required: ask the user to reply “Yes, delete ${task.title}” before trying again.`;
+      },
+    }),
+    new DynamicStructuredTool({
+      name: "create_calendar_event",
+      description: "Create a calendar event only when the user explicitly asks. Dates must be complete ISO timestamps.",
+      schema: z.object({
+        provider: z.enum(["GOOGLE", "OUTLOOK"]),
+        title: z.string().min(1).max(160),
+        start: z.string().datetime({ offset: true }),
+        end: z.string().datetime({ offset: true }),
+        description: z.string().max(4000).optional(),
+        location: z.string().max(300).optional(),
+      }),
+      func: async (input) => {
+        try {
+          const event = await createCalendarEvent(userId, input as {
+            provider: CalendarProvider;
+            title: string;
+            start: string;
+            end: string;
+            description?: string;
+            location?: string;
+          });
+          activities.push({ tool: "Calendar event created", detail: event.title });
+          return safeJson(event);
+        } catch (error) {
+          return `Could not create event: ${error instanceof Error ? error.message : "unknown error"}`;
+        }
+      },
+    }),
+    new DynamicStructuredTool({
+      name: "start_focus_timer",
+      description: "Start the floating focus timer when the user asks to focus for a number of minutes.",
+      schema: z.object({ minutes: z.number().int().min(1).max(180) }),
+      func: async ({ minutes }) => {
+        timerMinutes = minutes;
+        activities.push({ tool: "Focus timer started", detail: `${minutes} minutes` });
+        return `Started a ${minutes}-minute focus timer.`;
+      },
+    }),
   ];
   const llm = model();
   if (!llm) return { answer: "Nemo needs an AI provider key before it can think. Add GOOGLE_API_KEY for Google AI Studio or OPENROUTER_API_KEY for OpenRouter, then try again.", activities };
-  const messages: BaseMessage[] = [new SystemMessage(`You are Nemo, Athena's concise study agent. Today is ${today()}. Use tools for all user data and actions; never invent tool results. Explain resource answers with document names. For calendar events, require an explicit request and complete date/time details. If key details are missing, ask one focused follow-up. Keep answers under 160 words. Format for scanning: use short paragraphs, Markdown **labels** for metadata, and a proper newline-separated numbered or bulleted list for choices. Never place Markdown list items in the middle of a sentence.`), ...history.map((turn) => turn.role === "user" ? new HumanMessage(turn.text) : new AIMessage(turn.text)), new HumanMessage(message)];
+  const contextNote = context.resourceTitle ? ` The user is currently reading the PDF resource “${context.resourceTitle}”. When answering resource questions, use that document first and say when the answer is not present in it.` : "";
+  const messages: BaseMessage[] = [new SystemMessage(`You are Nemo, Athena's concise study agent. Today is ${today()}.${contextNote} Use tools for all user data and actions; never invent tool results. Explain resource answers with document names. For calendar events, require an explicit request and complete date/time details. If key details are missing, ask one focused follow-up. Keep answers under 160 words. Format for scanning: use short paragraphs, Markdown **labels** for metadata, and a proper newline-separated numbered or bulleted list for choices. Never place Markdown list items in the middle of a sentence.`), ...history.map((turn) => turn.role === "user" ? new HumanMessage(turn.text) : new AIMessage(turn.text)), new HumanMessage(message)];
   const agent = llm.bindTools(tools);
   for (let round = 0; round < 5; round += 1) {
     const reply = await agent.invoke(messages);

@@ -159,8 +159,15 @@ async function postTokenForm(url: string, values: Record<string, string>, timeou
     body: new URLSearchParams(values),
     signal: AbortSignal.timeout(timeoutMs),
   });
-  const body = await response.json();
-  if (!response.ok) throw new Error(typeof body.error_description === "string" ? body.error_description : "The calendar provider rejected the authorization request.");
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const desc = typeof body.error_description === "string" ? body.error_description : "";
+    const err = typeof body.error === "string" ? body.error : "";
+    if (desc.toLowerCase().includes("expired or revoked") || err === "invalid_grant") {
+      throw new Error("Calendar access expired or was revoked. Please disconnect and reconnect in Calendar Settings.");
+    }
+    throw new Error(desc || "The calendar provider rejected the authorization request.");
+  }
   return body as { access_token: string; refresh_token?: string; expires_in?: number; scope?: string };
 }
 
@@ -540,12 +547,17 @@ async function performCalendarSync(userId: string, start: string, end: string): 
         : await fetchOutlookEvents(connection, start, end, deadline);
       return { provider: connection.provider, ...result, error: null as string | null };
     } catch (error) {
-      console.error(`Calendar sync failed for ${connection.provider}:`, error);
+      const message = error instanceof Error ? error.message : "Could not synchronize this calendar. Check your connection and retry.";
+      if (message.includes("expired or was revoked") || message.includes("expired or revoked")) {
+        console.warn(`Calendar authorization expired for ${connection.provider}: reconnect required.`);
+      } else {
+        console.error(`Calendar sync failed for ${connection.provider}:`, error);
+      }
       return {
         provider: connection.provider,
         events: [] as CalendarEvent[],
         warnings: [] as { provider: CalendarProvider; message: string }[],
-        error: error instanceof Error ? error.message : "Could not synchronize this calendar. Check your connection and retry.",
+        error: message,
       };
     }
   }));

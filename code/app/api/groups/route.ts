@@ -5,12 +5,25 @@ import { createGroupSchema } from "@/lib/validations/group";
 import crypto from "crypto";
 
 // REQ-GROUP-004: Athena would maintain membership information for each study group
-export async function GET() {
+export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: "Unauthorised" }, { status: 401 });
 
+  const query = new URL(request.url).searchParams.get("query")?.trim() ?? "";
+  if (query.length > 120) return NextResponse.json({ message: "Search query is too long." }, { status: 400 });
+
   const memberships = await prisma.studyGroupMember.findMany({
-    where: { userId: user.id },
+    where: {
+      userId: user.id,
+      ...(query.length >= 2 ? {
+        group: {
+          OR: [
+            { name: { contains: query, mode: "insensitive" as const } },
+            { description: { contains: query, mode: "insensitive" as const } },
+          ],
+        },
+      } : {}),
+    },
     include: {
       group: {
         include: {
@@ -31,7 +44,7 @@ export async function GET() {
     role: m.role,
   }));
 
-  return NextResponse.json(groups);
+  return NextResponse.json(groups, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 // REQ-GROUP-001: Students can create study groups
