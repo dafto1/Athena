@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CalendarDays, Check, Clock3, FileText, LayoutDashboard, LoaderCircle, Search, Sparkles, Timer, UsersRound, ListTodo, X } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Clock3, FileText, LayoutDashboard, LoaderCircle, Search, Sparkles, Timer, UsersRound, ListTodo, CircleHelp, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -22,6 +22,7 @@ const searchablePages = [
   { id: "calendar", title: "Calendar", detail: "Events and study sessions", href: "/dashboard/calendar", aliases: ["calendar", "event", "events", "schedule"], icon: CalendarDays },
   { id: "timer", title: "Focus Timer", detail: "Pomodoro timer", href: "/dashboard/timer", aliases: ["timer", "focus", "pomodoro"], icon: Timer },
   { id: "groups", title: "Study Groups", detail: "Your groups", href: "/dashboard/groups", aliases: ["group", "groups", "study group", "study groups"], icon: UsersRound },
+  { id: "quiz", title: "Quiz", detail: "Quizzes from your resources", href: "/dashboard/quiz", aliases: ["quiz", "quizzes", "test", "practice"], icon: CircleHelp },
 ];
 
 function normalizeQuery(value: string) {
