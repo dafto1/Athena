@@ -73,7 +73,6 @@ describe("Athena browser tests", { skip: missingCredentials ? "Set SELENIUM_EMAI
       ["/dashboard/timer", "Focus Timer"],
       ["/dashboard/resources", "Resources"],
       ["/dashboard/groups", "Study Groups"],
-      ["/dashboard/nemo", "Nemo"],
     ]) await openPage(path, heading);
   });
 
@@ -133,6 +132,19 @@ describe("Athena browser tests", { skip: missingCredentials ? "Set SELENIUM_EMAI
     await driver.findElement(By.xpath("//button[normalize-space()='Cancel']")).click();
   });
 
+  test("Nemo starts the floating focus timer", async () => {
+    await openPage("/dashboard/nemo", "Nemo");
+    await driver.executeScript(`
+      const originalFetch = window.fetch;
+      window.fetch = (...args) => args[0] === "/api/nemo"
+        ? Promise.resolve(new Response(JSON.stringify({ answer: "Starting a 25 minute focus timer.", activities: [], timerMinutes: 25 }), { status: 200, headers: { "Content-Type": "application/json" } }))
+        : originalFetch(...args);
+    `);
+    await driver.findElement(By.xpath("//button[normalize-space()='Start a focus sprint']")).click();
+    const timer = await driver.wait(until.elementLocated(By.css('[aria-label="Floating focus timer"]')), 5_000, "Nemo did not open the floating focus timer.");
+    await driver.wait(until.elementTextContains(timer, "25:"), 2_000);
+  });
+
   test("Focus Timer starts, pauses, resumes, and resets", async () => {
     await openPage("/dashboard/timer", "Focus Timer");
     const timer = await driver.findElement(By.css('[data-testid="focus-timer"]'));
@@ -158,32 +170,4 @@ describe("Athena browser tests", { skip: missingCredentials ? "Set SELENIUM_EMAI
     await waitForText(status, "Ready", 2_000);
   });
 
-  test("Nemo suggestions and in-chat Pomodoro timer work", async () => {
-    await openPage("/dashboard/nemo", "Nemo");
-    await driver.findElement(By.xpath("//button[normalize-space()='New chat']")).click();
-    await driver.findElement(By.xpath("//button[normalize-space()='Start a 25-minute Pomodoro']")).click();
-    const composer = await driver.findElement(By.css('textarea[placeholder="Message Nemo…"]'));
-    assert.equal(await composer.getAttribute("value"), "Start a 25-minute Pomodoro");
-    await composer.clear();
-
-    await driver.findElement(By.css('button[aria-label="Toggle Pomodoro timer"]')).click();
-    const panel = await driver.findElement(By.css('[aria-label="Pomodoro timer"]'));
-    await panel.findElement(By.xpath(".//button[normalize-space()='15 min']")).click();
-    const countdown = panel.findElement(By.css('[data-testid="pomodoro-countdown"]'));
-    const status = panel.findElement(By.css("p"));
-    await driver.wait(until.elementTextIs(countdown, "15:00"), 2_000);
-
-    await panel.findElement(By.xpath(".//button[normalize-space()='Start']")).click();
-    await driver.wait(async () => (await countdown.getText()) !== "15:00", 3_000, "Chat timer did not start.");
-    await waitForText(status, "Focusing", 2_000);
-    await panel.findElement(By.xpath(".//button[normalize-space()='Pause']")).click();
-    await waitForText(status, "Paused", 2_000);
-    const pausedAt = await countdown.getText();
-    await new Promise((resolve) => setTimeout(resolve, 1_100));
-    assert.equal(await countdown.getText(), pausedAt, "Chat timer should remain still while paused.");
-
-    await panel.findElement(By.xpath(".//button[normalize-space()='Reset']")).click();
-    await driver.wait(until.elementTextIs(countdown, "15:00"), 2_000);
-    await waitForText(status, "Choose a focus interval", 2_000);
-  });
 });

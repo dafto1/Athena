@@ -3,16 +3,30 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { taskSchema } from "@/lib/validations/task";
 
-export async function GET() {
+export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
+  const params = new URL(request.url).searchParams;
+  const query = params.get("query")?.trim() ?? "";
+  const searchMode = params.get("search") === "1";
+  if (query.length > 120) return NextResponse.json({ message: "Search query is too long." }, { status: 400 });
+
   const tasks = await prisma.task.findMany({
-    where: { userId: user.id },
+    where: {
+      userId: user.id,
+      ...(query ? {
+        OR: [
+          { title: { contains: query, mode: "insensitive" as const } },
+          { description: { contains: query, mode: "insensitive" as const } },
+        ],
+      } : {}),
+    },
     orderBy: [{ completed: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],
+    ...(searchMode ? { take: 8 } : {}),
   });
 
-  return NextResponse.json(tasks);
+  return NextResponse.json(tasks, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function POST(request: NextRequest) {

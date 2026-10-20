@@ -30,7 +30,8 @@ model User {
   groupMemberships StudyGroupMember[]
   sharedResources GroupResource[]
  calendarConnections CalendarConnection[]
-  nemoConversations NemoConversation[]
+ quizzes Quiz[]
+ quizAttempts QuizAttempt[]
  }
 
 enum CalendarProvider {
@@ -53,30 +54,6 @@ model CalendarConnection {
 
   @@unique([userId, provider])
   @@index([userId])
-}
-
-model NemoConversation {
-  id        String        @id @default(cuid())
-  title     String        @default("New chat")
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  userId    String
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  NemoMessage[]
-
-  @@index([userId, updatedAt])
-}
-
-model NemoMessage {
-  id             String          @id @default(cuid())
-  role           String
-  content        String          @db.Text
-  action         Json?
-  createdAt      DateTime        @default(now())
-  conversationId String
-  conversation   NemoConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  @@index([conversationId, createdAt])
 }
 
  model Task { 
@@ -119,6 +96,7 @@ model Resource {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   annotations Annotation[]
   groupShares GroupResource[]
+  quizzes Quiz[]
 
   @@index([userId, category])
 }
@@ -212,4 +190,78 @@ model GroupResource {
   @@index([groupId])
   @@index([resourceId])
   @@index([sharedById])
+}
+
+model Quiz {
+  id         String         @id @default(cuid())
+  title      String
+  createdAt  DateTime       @default(now())
+  userId     String
+  resourceId String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   Resource       @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  questions  QuizQuestion[]
+  attempts   QuizAttempt[]
+
+  @@index([userId, createdAt])
+  @@index([resourceId])
+}
+
+model QuizQuestion {
+  id          String       @id @default(cuid())
+  prompt      String       @db.Text
+  explanation String       @db.Text
+  position    Int
+  quizId      String
+  quiz        Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options     QuizOption[]
+  answers     QuizAnswer[]
+
+  @@unique([quizId, position])
+  @@index([quizId])
+}
+
+model QuizOption {
+  id         String       @id @default(cuid())
+  text       String       @db.Text
+  position   Int
+  isCorrect  Boolean      @default(false)
+  questionId String
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers    QuizAnswer[]
+
+  @@unique([questionId, position])
+  @@index([questionId])
+}
+
+model QuizAttempt {
+  id                String       @id @default(cuid())
+  score             Int
+  totalQuestions    Int
+  questionOrder     Json
+  createdAt         DateTime     @default(now())
+  quizId            String
+  userId            String
+  quiz              Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers           QuizAnswer[]
+
+  @@index([quizId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model QuizAnswer {
+  id               String       @id @default(cuid())
+  isCorrect        Boolean      @default(false)
+  optionOrder      Json
+  attemptId        String
+  questionId       String
+  selectedOptionId String?
+  attempt          QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption   QuizOption?  @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+  @@index([selectedOptionId])
 }

@@ -12,10 +12,8 @@ import {
   FolderOpen,
   Edit3,
   Users,
-  Sparkles,
   ArrowRight,
   ChevronDown,
-  CheckCircle,
 } from "lucide-react";
 
 if (typeof window !== "undefined") {
@@ -31,7 +29,7 @@ interface FeatureItem {
   description: string;
   tag: string;
   ctaText: string;
-  previewType: "plan" | "focus" | "organize" | "annotate" | "collaborate" | "nemo";
+  previewType: "plan" | "focus" | "organize" | "annotate" | "collaborate";
 }
 
 const features: FeatureItem[] = [
@@ -94,18 +92,6 @@ const features: FeatureItem[] = [
     tag: "Silent Cohorts",
     ctaText: "Join quiet sprint",
     previewType: "collaborate",
-  },
-  {
-    id: "nemo",
-    num: "06",
-    category: "Grounded AI",
-    title: "Nemo AI",
-    tagline: "Verifiable citations anchored strictly to your readings.",
-    description:
-      "Get instant answers backed by verifiable page-level citations from your course materials. Strictly zero hallucinations.",
-    tag: "Zero Hallucination",
-    ctaText: "Ask Nemo a question",
-    previewType: "nemo",
   },
 ];
 
@@ -341,7 +327,7 @@ export function StitchDeepStudyScroll() {
               if (p < 0.10) {
                 counterCurrent.textContent = "00";
               } else {
-                const currentIdx = Math.min(6, Math.floor(((p - 0.10) / 0.90) * 6) + 1);
+                const currentIdx = Math.min(features.length, Math.floor(((p - 0.10) / 0.90) * features.length) + 1);
                 counterCurrent.textContent = `0${currentIdx}`;
               }
             }
@@ -904,43 +890,6 @@ export function StitchDeepStudyScroll() {
                       </div>
                     )}
 
-                    {/* 06. NEMO AI */}
-                    {feature.previewType === "nemo" && (
-                      <div className="space-y-3.5">
-                        <div className="flex items-center justify-between pb-3 border-b border-[#E8E6E0]">
-                          <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-[#E2B85C]" />
-                            <span className="font-mono-stitch text-xs font-bold text-[#292825]">
-                              Grounded Research Companion
-                            </span>
-                          </div>
-                          <span className="font-mono-stitch text-[10px] bg-[#EEE0BA] text-[#292825] px-2 py-0.5 rounded font-bold">
-                            Zero LLM Hallucinations
-                          </span>
-                        </div>
-
-                        <div className="p-3 bg-white rounded border border-[#E8E6E0] space-y-2 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono-stitch text-[10px] uppercase font-bold text-[#B85D38]">
-                              Verified Citation [Ch. 2, Page 41]
-                            </span>
-                            <span className="font-mono-stitch text-[9px] text-[#576055] font-bold">
-                              100% Grounded
-                            </span>
-                          </div>
-                          <p className="font-space-stitch text-[#292825] text-xs leading-relaxed">
-                            &ldquo;Sensory buffer holds environmental sensory data for brief intervals before rapid autonomic decay occurs unless attended.&rdquo;
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-1 font-mono-stitch text-[10px] text-[#77756F]">
-                          <span>Source: Atkinson & Shiffrin (1968).pdf</span>
-                          <span className="text-[#576055] font-semibold flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3 text-[#576055]" /> Verified from reading
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

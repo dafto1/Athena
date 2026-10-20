@@ -194,9 +194,16 @@ export function CalendarView({ initialNotice = "" }: { initialNotice?: string })
       {issues.map((issue) => (
         <div key={`${issue.provider ?? "calendar"}-${issue.message}`} role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           <span>{issue.provider ? `${PROVIDERS.find((item) => item.id === issue.provider)?.name}: ` : "Calendar: "}{issue.message}</span>
-          <Button variant="secondary" size="sm" onClick={() => void loadEvents()} disabled={loading}>
-            <RefreshCw className="h-4 w-4" /> Retry sync
-          </Button>
+          <div className="flex items-center gap-2">
+            {issue.message.toLowerCase().includes("reconnect") && (
+              <Button variant="secondary" size="sm" onClick={() => setAccountsOpen(true)}>
+                Manage accounts
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" onClick={() => void loadEvents()} disabled={loading}>
+              <RefreshCw className="h-4 w-4" /> Retry sync
+            </Button>
+          </div>
         </div>
       ))}
       {warnings.map((warning) => (

@@ -20,12 +20,24 @@ export function SessionHistory({ refreshKey }: { refreshKey: number }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    fetch("/api/study-sessions")
-      .then((r) => r.json())
-      .then((data: StudySession[]) => setSessions(data))
-      .catch(() => setSessions([]))
-      .finally(() => setLoading(false));
+    let active = true;
+    const loadSessions = () => {
+      setLoading(true);
+      fetch("/api/study-sessions")
+        .then((response) => {
+          if (!response.ok) throw new Error("Could not load sessions");
+          return response.json();
+        })
+        .then((data: StudySession[]) => { if (active) setSessions(data); })
+        .catch(() => { if (active) setSessions([]); })
+        .finally(() => { if (active) setLoading(false); });
+    };
+    loadSessions();
+    window.addEventListener("study-session-saved", loadSessions);
+    return () => {
+      active = false;
+      window.removeEventListener("study-session-saved", loadSessions);
+    };
   }, [refreshKey]);
 
   return (

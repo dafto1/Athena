@@ -175,7 +175,7 @@ export function StitchRoutine() {
                 Review & consolidate knowledge
               </h3>
               <p className="mt-3 font-space-stitch text-xs md:text-sm text-[#77756F] leading-relaxed">
-                Synthesize reading highlights into margin notes, generate flashcards with Nemo, and archive for finals.
+                Synthesize reading highlights into margin notes, generate flashcards, and archive for finals.
               </p>
             </div>
             <div className="mt-8 pt-4 border-t border-[#E8E6E0] flex items-center justify-between text-xs">

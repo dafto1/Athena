@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   CalendarDays,
+  CircleHelp,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
@@ -23,6 +24,7 @@ const links = [
   { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/dashboard/timer", label: "Focus Timer", icon: Timer },
   { href: "/dashboard/resources", label: "Resources", iconSrc: "/figma/file.svg" },
+  { href: "/dashboard/quiz", label: "Quiz", icon: CircleHelp },
   { href: "/dashboard/groups", label: "Study Groups", iconSrc: "/figma/groups.svg" },
   { href: "/dashboard/nemo", label: "Nemo", icon: Sparkles },
 ];

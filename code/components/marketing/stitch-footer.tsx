@@ -28,9 +28,6 @@ export function StitchFooter() {
             <a href="#how-it-works" className="text-[#77756F] hover:text-[#292825] transition-colors">
               How it works
             </a>
-            <a href="#nemo-ai" className="text-[#77756F] hover:text-[#292825] transition-colors">
-              Nemo AI
-            </a>
             <a href="#study-groups" className="text-[#77756F] hover:text-[#292825] transition-colors">
               Study Groups
             </a>

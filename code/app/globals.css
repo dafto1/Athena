@@ -93,6 +93,31 @@ html.dark .border-stone-100, html.dark .border-stone-200, html.dark .border-ston
 html.dark input, html.dark textarea, html.dark select { background-color: #292927; color: #e7e5e4; border-color: #57534e; }
 html.dark input::placeholder, html.dark textarea::placeholder { color: #a8a29e; }
 
+/* Nemo uses its own warm palette, so explicitly carry those surfaces into dark mode. */
+html.dark [data-nemo-workspace] [class~="text-[#292825]"],
+html.dark [data-nemo-workspace] [class~="text-[#2e2c28]"],
+html.dark [data-nemo-workspace] [class~="text-[#37352f]"],
+html.dark [data-nemo-workspace] [class~="text-[#4e4c47]"],
+html.dark [data-nemo-workspace] [class~="text-[#5e5140]"],
+html.dark [data-nemo-workspace] [class~="text-[#5f5e5b]"],
+html.dark [data-nemo-workspace] [class~="text-[#6b6964]"],
+html.dark [data-nemo-workspace] [class~="text-[#787774]"] { color: #e7e5e4 !important; }
+html.dark [data-nemo-workspace] [class~="text-[#aaa7a0]"] { color: #a8a29e !important; }
+html.dark [data-nemo-workspace] [class~="bg-[#fffefd]"],
+html.dark [data-nemo-workspace] [class~="bg-[#f0ede8]"],
+html.dark [data-nemo-workspace] [class~="bg-[#f3e9dc]"],
+html.dark [data-nemo-workspace] [class~="bg-[#faf9f7]"],
+html.dark [data-nemo-workspace] [class~="bg-white"] { background-color: #20201e !important; }
+html.dark [data-nemo-workspace] [class~="border-[#ebe6de]"],
+html.dark [data-nemo-workspace] [class~="border-[#e6e2db]"],
+html.dark [data-nemo-workspace] [class~="border-[#d8c5ae]"],
+html.dark [data-nemo-workspace] [class~="border-l-[#d8c5ae]"],
+html.dark [data-nemo-workspace] [class~="border-[#d8d5ce]"],
+html.dark [data-nemo-workspace] [class~="border-[#dcd7ce]"] { border-color: #44403c !important; }
+html.dark [data-nemo-workspace] textarea { background: transparent !important; color: #e7e5e4 !important; }
+html.dark [data-nemo-workspace] button:hover { color: #f5f5f4; }
+html.dark [data-nemo-workspace] [class~="hover:bg-white"]:hover { background-color: #333330 !important; }
+
 .react-pdf__Page {
   position: relative;
 }

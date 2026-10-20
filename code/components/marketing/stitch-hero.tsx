@@ -630,7 +630,7 @@ export function StitchHero() {
                     </ul>
                     <div className="mt-3 pt-2 border-t border-[#E8E6E0] text-[11px] text-[#292825] font-semibold flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-[#E2B85C]" />
-                      <span>Nemo: &ldquo;Generate 3 retrieval flashcards on STS vs LTS&rdquo;</span>
+                      <span>Generate 3 retrieval flashcards on STS vs LTS</span>
                     </div>
                   </div>
                 </div>

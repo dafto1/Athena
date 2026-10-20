@@ -21,19 +21,6 @@ Enable the Google Calendar API and request the `https://www.googleapis.com/auth/
 
 Apply the calendar connection migration with `npx prisma migrate deploy` and regenerate the Prisma client with `npx prisma generate` after updating the schema.
 
-## Nemo setup
-
-Nemo can run against local models via **Ollama** or cloud models via **OpenRouter**:
-
-- **Local Ollama (Offline / Free)**:
-  Set `NEMO_PROVIDER=ollama`, `OLLAMA_BASE_URL=http://127.0.0.1:11434`, and `OLLAMA_MODEL=nemotron-3-nano:4b` in `.env`. Ensure Ollama is running (`ollama serve` or the desktop app) with the model installed (`ollama pull nemotron-3-nano:4b`).
-- **OpenRouter (Cloud)**:
-  Set `NEMO_PROVIDER=openrouter`, `OPENROUTER_API_KEY`, and `OPENROUTER_MODEL` (e.g. `nvidia/nemotron-3-ultra-550b-a55b`) in `.env`.
-
-Create and apply the Nemo conversation migration with `npx prisma migrate dev --name nemo_conversations`, then regenerate Prisma Client with `npx prisma generate`.
-
-Nemo extracts text from PDF, DOCX, PPTX, TXT, and Markdown uploads. After applying the resource text migration or adding a new extractor, run `npm run index:resource-text` to index existing supported resources that do not have extracted text yet. Scanned PDFs and images need OCR and are not currently indexed.
-
 ## Selenium browser test
 
 Install dependencies with `npm install`, start Athena with `npm run dev`, then run the browser smoke test from a second terminal. Use a test account because the test signs in to Athena.
@@ -45,7 +32,7 @@ $env:SELENIUM_HEADLESS = "1" # Optional: run Chrome without a visible window
 npm run test:e2e
 ```
 
-The test defaults to `http://localhost:3000`; set `SELENIUM_BASE_URL` to test another running instance. It signs in once and checks dashboard pages, search, task filters, calendar navigation and settings, resource and group search, and both timers. Timers are reset before completion, so tests do not create focus-session records. The Nemo scenario creates an empty chat to exercise its suggestion buttons. Selenium Manager obtains the matching browser driver when needed.
+The test defaults to `http://localhost:3000`; set `SELENIUM_BASE_URL` to test another running instance. It signs in once and checks dashboard pages, search, task filters, calendar navigation and settings, resource and group search, and the focus timer. Timers are reset before completion, so tests do not create focus-session records. Selenium Manager obtains the matching browser driver when needed.
 
 ## White-box unit tests
 
